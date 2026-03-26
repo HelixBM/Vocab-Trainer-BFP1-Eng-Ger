@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vocab Trainer – BFP1</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a56b0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Vocab BFP1">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f9f8f6;color:#1a1a18;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem}
+.wrap{width:100%;max-width:580px}
+.screen{display:none}.screen.active{display:block}
+.pill{display:inline-block;font-size:12px;font-weight:500;padding:3px 10px;border-radius:20px;background:#f0ede8;color:#6b6860;border:0.5px solid #ddd8d0}
+.btn{cursor:pointer;padding:9px 20px;border-radius:8px;border:0.5px solid #c8c4be;background:#fff;color:#1a1a18;font-size:14px;font-weight:500;transition:background .15s,transform .1s;font-family:inherit}
+.btn:hover{background:#f0ede8}.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.4;cursor:default;pointer-events:none}
+.btn-accent{background:#e8f0fb;color:#1a56b0;border-color:#b8cff0}.btn-accent:hover{opacity:.85}
+.btn-sm{padding:7px 14px;font-size:13px}
+h2{font-size:18px;font-weight:500;color:#1a1a18;margin-bottom:.25rem}
+.sub{font-size:13px;color:#6b6860;margin-bottom:1.25rem}
+.progress-bar{height:5px;background:#e8e4de;border-radius:4px;overflow:hidden;margin-bottom:1.5rem}
+.progress-fill{height:100%;background:#1a56b0;border-radius:4px;transition:width .35s}
+.score-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#6b6860;margin-bottom:.75rem}
+.word-card{background:#f0ede8;border:0.5px solid #ddd8d0;border-radius:12px;padding:1.5rem;text-align:center;font-size:21px;font-weight:500;color:#1a1a18;margin-bottom:1.5rem;min-height:76px;display:flex;align-items:center;justify-content:center;line-height:1.3}
+.back-link{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#6b6860;cursor:pointer;margin-bottom:1.25rem;background:none;border:none;font-family:inherit;padding:0}
+.back-link:hover{color:#1a1a18}
+
+/* ── selection ── */
+.unit-list{display:flex;flex-direction:column;gap:7px;margin-bottom:1.25rem}
+.unit-card{cursor:pointer;padding:13px 16px;border-radius:10px;border:0.5px solid #c8c4be;background:#fff;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+.unit-card:hover{border-color:#888;background:#f0ede8}
+.unit-card.selected{border-color:#1a56b0;background:#e8f0fb}
+.unit-name{font-size:14px;font-weight:500;color:#1a1a18}
+.unit-meta{font-size:12px;color:#6b6860;margin-top:2px}
+.unit-count{font-size:12px;font-weight:500;padding:2px 8px;border-radius:12px;background:#f0ede8;color:#6b6860;white-space:nowrap}
+.unit-card.selected .unit-count{background:#d0e3f7;color:#1a56b0}
+
+.range-box{background:#fff;border:0.5px solid #ddd8d0;border-radius:10px;padding:1.25rem;margin-bottom:1.25rem}
+.range-title{font-size:13px;font-weight:500;color:#1a1a18;margin-bottom:.75rem}
+.range-row{display:flex;align-items:center;gap:10px;margin-bottom:.5rem;flex-wrap:wrap}
+.range-label{font-size:13px;color:#6b6860;min-width:30px}
+.range-input{width:68px;padding:7px 10px;border-radius:7px;border:0.5px solid #c8c4be;font-size:14px;font-family:inherit;text-align:center;background:#fff;color:#1a1a18}
+.range-input:focus{outline:none;border-color:#1a56b0}
+.range-sep{font-size:14px;color:#6b6860}
+.range-count{font-size:13px;font-weight:500;color:#1a56b0;min-width:60px}
+
+.page-bubbles{display:flex;flex-wrap:wrap;gap:4px;margin-top:.75rem;max-height:120px;overflow-y:auto}
+.pb{width:34px;height:26px;border-radius:5px;border:0.5px solid #ddd8d0;background:#f9f8f6;font-size:11px;font-weight:500;color:#9e9690;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;user-select:none}
+.pb:hover{border-color:#888;background:#f0ede8;color:#1a1a18}
+.pb.in-range{background:#e8f0fb;border-color:#b8cff0;color:#1a56b0}
+.pb.range-start{background:#1a56b0;border-color:#1a56b0;color:#fff}
+.pb.range-end{background:#1a56b0;border-color:#1a56b0;color:#fff}
+
+/* ── mode picker ── */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem}
+.mode-card{cursor:pointer;padding:14px;border-radius:10px;border:0.5px solid #c8c4be;background:#fff;transition:all .15s}
+.mode-card:hover{border-color:#888;background:#f0ede8}
+.mode-title{font-size:14px;font-weight:500;color:#1a1a18;margin-bottom:2px}
+.mode-desc{font-size:12px;color:#6b6860}
+
+/* ── MCQ ── */
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem}
+.opt{cursor:pointer;padding:13px 14px;border-radius:8px;border:0.5px solid #c8c4be;background:#fff;color:#1a1a18;font-size:13px;text-align:left;transition:all .15s;line-height:1.4;width:100%;font-family:inherit}
+.opt:hover:not([disabled]){background:#f0ede8}
+.opt.correct{background:#e8f7ee;color:#1a6b3a;border-color:#9dd4b4}
+.opt.wrong{background:#fdeaea;color:#a32d2d;border-color:#f0a0a0}
+.opt.reveal{background:#e8f7ee;color:#1a6b3a;border-color:#9dd4b4;opacity:.55}
+.opt[disabled]{cursor:default;pointer-events:none}
+
+/* ── flashcard ── */
+.fc-answer{text-align:center;font-size:16px;color:#6b6860;margin-bottom:1.5rem;line-height:1.6;padding:1rem;border-radius:8px;background:#f0ede8}
+
+/* ── match ── */
+.match-col{display:flex;flex-direction:column;gap:8px}
+.match-item{padding:10px 12px;border-radius:8px;border:0.5px solid #c8c4be;background:#fff;color:#1a1a18;font-size:13px;cursor:pointer;transition:all .15s;min-height:42px;display:flex;align-items:center;line-height:1.3}
+.match-item:hover{background:#f0ede8}
+.match-item.selected{border-color:#1a56b0;background:#e8f0fb;color:#1a56b0}
+.match-item.matched{border-color:#9dd4b4;background:#e8f7ee;color:#1a6b3a;pointer-events:none}
+.match-item.wrong-flash{border-color:#f0a0a0;background:#fdeaea;color:#a32d2d}
+
+/* ── type ── */
+.type-input{width:100%;padding:12px 14px;font-size:16px;border-radius:8px;border:0.5px solid #c8c4be;background:#fff;color:#1a1a18;margin-bottom:10px;font-family:inherit}
+.type-input:focus{outline:none;border-color:#1a56b0}
+.feedback{font-size:14px;min-height:20px;margin-bottom:1rem;font-weight:500}
+
+/* ── results ── */
+.summary-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:0.5px solid #e8e4de;font-size:13px}
+.badge-pct{font-size:44px;font-weight:500;text-align:center;margin:.75rem 0;color:#1a1a18}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- SCREEN 1: Selection -->
+<div id="select-screen" class="screen active">
+  <h2>Vocab Trainer</h2>
+  <p class="sub">Choose a unit or set a custom page range</p>
+  <div class="unit-list" id="unit-list"></div>
+  <div class="range-box">
+    <div class="range-title">Page range</div>
+    <div class="range-row">
+      <span class="range-label">From</span>
+      <input class="range-input" id="range-from" type="number" min="6" max="184" value="35">
+      <span class="range-sep">to</span>
+      <input class="range-input" id="range-to" type="number" min="6" max="184" value="46">
+      <span class="range-count" id="range-count"></span>
+    </div>
+    <div class="page-bubbles" id="page-bubbles"></div>
+  </div>
+  <button class="btn btn-accent" id="start-btn" onclick="goToModes()" style="width:100%;padding:12px">Continue →</button>
+</div>
+
+<!-- SCREEN 2: Mode picker -->
+<div id="mode-screen" class="screen">
+  <button class="back-link" onclick="show('select-screen')">← Change selection</button>
+  <h2>Choose a mode</h2>
+  <p class="sub" id="mode-sub"></p>
+  <div class="mode-grid">
+    <div class="mode-card" onclick="startMode('mcq')">
+      <div class="mode-title">Multiple choice</div>
+      <div class="mode-desc">Pick correct translation from 4 options</div>
+    </div>
+    <div class="mode-card" onclick="startMode('flashcard')">
+      <div class="mode-title">Flashcards</div>
+      <div class="mode-desc">Reveal translation, rate yourself</div>
+    </div>
+    <div class="mode-card" onclick="startMode('match')">
+      <div class="mode-title">Match pairs</div>
+      <div class="mode-desc">Connect word to translation (6 at a time)</div>
+    </div>
+    <div class="mode-card" onclick="startMode('type')">
+      <div class="mode-title">Type it</div>
+      <div class="mode-desc">Type the translation from memory</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div style="flex:1;min-width:140px">
+      <div style="font-size:12px;color:#6b6860;margin-bottom:6px">Direction</div>
+      <select id="dir-select" style="width:100%;padding:8px 10px;border-radius:8px;border:0.5px solid #c8c4be;background:#fff;font-size:13px;font-family:inherit;color:#1a1a18">
+        <option value="random">Random direction</option>
+        <option value="en-de">English → German</option>
+        <option value="de-en">Deutsch → Englisch</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 3: MCQ -->
+<div id="mcq-screen" class="screen">
+  <div class="score-row"><span id="mcq-label"></span><span id="mcq-score"></span></div>
+  <div class="progress-bar"><div class="progress-fill" id="mcq-progress"></div></div>
+  <div class="pill" id="mcq-dir" style="margin-bottom:1rem"></div>
+  <div class="word-card" id="mcq-word"></div>
+  <div class="options-grid" id="mcq-options"></div>
+  <button class="btn btn-sm" onclick="show('mode-screen')" style="display:block;margin:0 auto">All modes</button>
+</div>
+
+<!-- SCREEN 4: Flashcard -->
+<div id="flashcard-screen" class="screen">
+  <div class="score-row"><span id="fc-label"></span><span id="fc-score"></span></div>
+  <div class="progress-bar"><div class="progress-fill" id="fc-progress"></div></div>
+  <div class="pill" id="fc-dir" style="margin-bottom:1rem"></div>
+  <div class="word-card" id="fc-word"></div>
+  <div class="fc-answer" id="fc-translation" style="display:none"></div>
+  <div id="fc-reveal-btn" style="text-align:center;margin-bottom:1rem">
+    <button class="btn btn-accent" onclick="fcReveal()">Show translation</button>
+  </div>
+  <div id="fc-rate-btns" style="display:none;gap:10px;justify-content:center;margin-bottom:1.5rem">
+    <button class="btn" style="border-color:#f0a0a0;color:#a32d2d" onclick="fcRate(false)">Didn't know it</button>
+    <button class="btn" style="border-color:#9dd4b4;color:#1a6b3a" onclick="fcRate(true)">Got it</button>
+  </div>
+  <button class="btn btn-sm" onclick="show('mode-screen')" style="display:block;margin:0 auto">All modes</button>
+</div>
+
+<!-- SCREEN 5: Match -->
+<div id="match-screen" class="screen">
+  <div class="score-row"><span id="match-label">Match the pairs</span><span id="match-score"></span></div>
+  <div class="progress-bar"><div class="progress-fill" id="match-progress"></div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem">
+    <div class="match-col" id="match-left"></div>
+    <div class="match-col" id="match-right"></div>
+  </div>
+  <button class="btn btn-sm" onclick="show('mode-screen')" style="display:block;margin:0 auto">All modes</button>
+</div>
+
+<!-- SCREEN 6: Type -->
+<div id="type-screen" class="screen">
+  <div class="score-row"><span id="type-label"></span><span id="type-score"></span></div>
+  <div class="progress-bar"><div class="progress-fill" id="type-progress"></div></div>
+  <div class="pill" id="type-dir" style="margin-bottom:1rem"></div>
+  <div class="word-card" id="type-word"></div>
+  <input class="type-input" id="type-input" placeholder="Type the translation…" autocomplete="off" spellcheck="false">
+  <div class="feedback" id="type-feedback"></div>
+  <div style="display:flex;gap:10px;margin-bottom:1.5rem">
+    <button class="btn btn-accent" onclick="typeCheck()" style="flex:1">Check</button>
+    <button class="btn" onclick="typeSkip()" style="color:#6b6860">Skip</button>
+  </div>
+  <button class="btn btn-sm" onclick="show('mode-screen')" style="display:block;margin:0 auto">All modes</button>
+</div>
+
+<!-- SCREEN 7: Results -->
+<div id="result-screen" class="screen">
+  <div style="text-align:center;margin-bottom:1rem">
+    <div class="badge-pct" id="result-pct"></div>
+    <div style="font-size:18px;font-weight:500;margin-bottom:.25rem" id="result-title"></div>
+    <div style="font-size:13px;color:#6b6860" id="result-sub"></div>
+  </div>
+  <div id="result-wrong" style="margin:1.5rem 0"></div>
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+    <button class="btn btn-accent" onclick="retryMode()">Play again</button>
+    <button class="btn" onclick="show('mode-screen')">All modes</button>
+    <button class="btn" onclick="show('select-screen')">Change words</button>
+  </div>
+</div>
+
+</div>
+<script>
+const VOCAB_BY_PAGE = {
+  6: [["to get","loslegen,"],["started","anfangen"],["to match sth","etw (einer"],["(to sth)","Sache) zuordnen"],["to take turns","etw"],["to do sth","abwechselnd tun"],["to practise","üben"],["to speak up","lauter sprechen"],["to pronounce","aussprechen"],["to slow down","langsamer sprechen"],["to mean","bedeuten"],["to start off","anfangen"],["to add","hinzufügen"],["next to","neben"],["column","(Text:) Spalte"],["to be short","zu wenig von"],["on sth","etw haben"],["to fill","füllen"],["statement","Aussage, Aussagesatz"]],
+  7: [["waiter","Kellner"],["agent","lefonagent/in, Call centeragent/in"],["attendant","ugbegleiter/in"],["safety","Sicherheit"],["regulations","svorschriften,"],["receptionist","Empfangsm itarbeiter/in, R ezeptionist/in"],["guest","Gast"],["personal","persönlich, privat"],["fantasy","Phantasie-"],["engineer","Ingenieur/in, Techniker/in"],["to introduce","jdn jdm"],["sb to sb","vorstellen"]],
+  8: [["in front of","vor"],["board","(Wand-)Tafel"],["dictionary","Wörterbuch"],["trolley","Wagen"],["to brainstorm","Ideen sammeln"],["mobile","Handy"],["iced tea","Eistee"],["to report","jdm berichten,"],["back to sb","jdm Bericht erstatten"]],
+  9: [["dream","Traum"],["while","während"],["facilities pl","Ei nrichtung(en), Ausstattung"],["cinema","Kino"],["to sleep","schlafen"],["student","Schüler/in, Student/in"],["to arrive","eintreffen, ankommen"],["vowel","Vokal"],["consonant","Konsonant"],["church","Kirche"],["shelf,","Regal, Regale"],["piano","Klavier"],["hero","Held"]],
+  10: [["exception (to","Ausnahme (von"],["sth)","etw)"],["certain","bestimmte/r/s, gewisse/r/s"],["sound","Laut, Klang"],["to become","(zu etw / etw)"],["(sth)","werden"],["sheep, sheep","Schaf, Schafe"],["tooth, teeth","Zahn, Zähne"],["scissors pl","Schere"],["sentence","Satz"],["to decide","(sich) entscheiden"],["parking space","Parkplatz"],["capital","Hauptstadt"],["bowl","Schale, Schüssel, Napf"],["cupboard","Schrank"]],
+  11: [["bracket","Klammer"],["dirty","schmutzig, dreckig"],["scooter","Tretroller, Motorroller"],["speech bubble","Sprechblase"],["maths","Mathe"],["to translate","übersetzen"],["to make sb do","jdn dazu"],["sth","bringen, etw zu tun"]],
+  12: [["to be afraid","vor jdm/etw"],["of sb/sth","Angst haben, sich vor jdm/etw fürchten"],["wallet","Brieftasche, (Herren -)Portemonnaie"],["to lend","leihen, borgen"],["to hurry up","sich beeilen"],["present","Geschenk"],["to send","schicken, senden"],["to be lost","sich verlaufen haben"],["to count","zählen"],["uncountable","unzählbar"],["countable","zählbar"],["fridge","Kühlschrank"]],
+  13: [["choice","Wahl"],["to spend","(Zeit) verbringen"],["homework","Hausaufgaben"],["pocket money","Taschengeld"],["worried","besorgt, beunruhigt"],["beer","Bier"],["muscle","Muskel"],["chicken","Huhn, Hühnchen"],["timetable","Fahrplan, Zeitplan"],["to be careful","bei etw"],["with sth","aufpassen, vorsichtig bei/mit etw sein"],["weekday","Wochentag, Werktag"]],
+  14: [["nationality","Staats angehörigkeit, Nationalität"],["to combine","verbinden, kombinieren"],["item","Gegenstand, Artikel, Ding, Sache"],["once","einmal"],["chart","Tabelle"],["cathedral","Dom, Kathedrale"],["holiday","Urlaubsort,"],["resort","Ferienort"],["island","Insel"],["monument","Denkmal"],["river","Fluss"],["state","Staat"],["to fill in","eintragen, ausfüllen"]],
+  15: [["to identify","identifizieren, (die"],["to taste (of","(nach etw) schmecken"],["to order","bestellen"],["to deliver","liefern"],["to give reasons","begründen"]],
+  16: [["habit","Gewohnheit"],["to take part in","an etw teilnehmen"],["exchange","Austausch"],["global","global, weltumspannend"],["issue","Frage, Streitpunkt, Problem"],["to feed","ernähren"],["to inform (sb of","(jdn über etw) informieren"],["to prepare","(sich) vorbereiten"],["translation","Übersetzung"],["task","Aufgabe"],["suggestion","Vorschlag"],["skill","Fähigkeit, Fertigkeit"],["title","Titel"],["paragraph","(Text:) Absatz"],["heading","Überschrift"],["to deal with sth","sich mit etw befassen"],["caption","explanation under"],["opposite","gegenüber(liegend)"],["to fit sth","to be right for"],["context","Zusammenhang, Kontext"],["sub-heading","Zwischenüberschrift"],["paragraph","(Text:) Absatz"],["source","Quelle"],["protein","Eiweiß, Protein(e)"],["technology","Technologie, Technik"],["to survive","überleben"],["to rethink sth","etw überdenken"],["food production","Nahrungsmittelproduktion"]],
+  17: [["to face sth","einer Sache gegenüberstehen"],["major","groß, bedeutend"],["global warming","Erderwärmung fight global"],["population","Bevölkerung"],["to grow","wachsen, zunehmen"],["rapid(ly)","schnell, rasch, rapide"],["forest","many trees together Wald"],["to destroy","zerstören"],["scientist","(Natur-)Wissenschaft-ler/in"],["to argue","argumentieren"],["diet","Kost, Ernährung"],["based on","auf Grundlage von"],["option","possibilty, choice, Alternative, Möglichkeit"],["amount","Menge"],["to study sth","sich etw genau ansehen"],["apart from","abgesehen von, außer"],["sustainable","nachhaltig"],["resources pl","Rohstoffe, Ressourcen"],["generally","normalerweise, im Allgemeinen"],["healthy","gesund"],["serving","Portion"],["saturated fats","gesättigte Fette/Fettsäuren saturated fats"],["twice","zweimal"],["average","Durchschnitt(s-)"],["due to","aufgrund von"],["religious","religiös, Religions-"],["desert","Wüste"],["lack (of sth)","Mangel (an etw)"],["influence (on","Einfluss, Auswirkung(en) (auf jdn/etw)"],["ingredient","Zutat, Bestandteil"],["dish","Gericht, Speise"],["dried","getrocknet"],["lentil","Linse"],["flour","used"],["legumes pl","Hülsenfrüchte"],["inhabitant","Einwohner, Bewohner"],["dairy products","Milchprodukte cheese"],["instead of","anstelle von, anstatt"],["to warm up","sich erwärmen, sich erhitzen"],["to adapt to sth","sich an etw anpassen"],["heat","Wärme, Hitze"],["last but not","zu guter Letzt, nicht zu vergessen"],["culture","Kultur"],["seaweed","Seetang"],["century","period of 100 years Jahrhundert"],["to boil sth","Wasser) kochen"],["mineral","Mineral(stoff)"],["particularly","besonders, insbesondere"],["iodine","Jod"],["iron","Eisen"],["to sound","klingen"],["to be glad","froh sein, sich freuen"],["after all","schließlich, immerhin"]],
+  18: [["weird","verrückt, schräg, seltsam"],["one day","Tages"],["recipe","(Koch-)Rezept"],["to be forced to","<>"],["to affect sb/sth","to influence sb/sth sich auf jdn/etw auswirken"],["slice","(Kuchen-)Stück"],["to jumble sth up","etw durcheinanderwerfen"]],
+  19: [["to appear","vorkommen, auftauchen"],["print","Druck-"],["agriculture","Landwirtschaft"],["article","Artikel"],["interesting","interessant"],["to save","retten"],["to examine","untersuchen"],["finally","schließlich, zuletzt"],["to conclude","schließen"]],
+  20: [["particular","spezielle/r/s, bestimmt"],["variety","Vielfalt, (große) Auswahl, Abwechslung"],["never","nie"],["order","Reihenfolge"],["to cause","verursachen"],["to suffer from","an illness"],["anaemia","Blutarmut, Anämie"],["to persuade sb","jdn überzeugen, jdn überreden"],["to happen","geschehen, passieren, vor sich"],["to make sth","dafür sorgen, dass etw geschieht"],["red blood cells","carry oxygen"],["to continue to","etw weiterhin tun sth"],["allergy","Allergie"],["plant","Pflanze"],["human","Mensch"],["to kill","töten, umbringen"],["nutritionist","Ernährungswissenschaftler/in"],["health","Gesundheit"],["dietician","Ernährungswissenschaftler/in"],["as long as","solange"],["soya","Soja"],["nutrient","Nährstoff"],["pork","Schweinefleisch"],["taste","Geschmack"],["to lead","führen, bringen"],["final","letzte/r/s"],["to change one’s","seine Gewohnheiten ändern"],["to agree with sb","<>"],["in my opinion","meiner Meinung nach"]],
+  21: [["rarely","selten, kaum"],["to draw","zeichnen, (Linie) ziehen"],["to shop for sth","etw (ein)kaufen"],["current","aktuell"]],
+  22: [["knowledge","Wissen, Kenntnisse"],["fried","gebraten, Brat-"],["can","Dose"],["packet","Packung, Tüte"],["crisps pl","Chips"],["pretzel","Brezel"],["to head for sth","sich auf den Weg zum/r … machen"],["cereal","Müsli, Getreideflocken"],["juice","Saft"],["bacon","Speck"],["pub","Kneipe, Gasthaus"],["Cheers!","Prost!"],["appetite","wanting"],["to raise your","sein Glas erheben glass and said"],["Here’s to …!","(Trinkspruch:) Auf ...!"],["amount","(Geld-)Betrag"],["credit card","Kreditkarte"],["bill","Rechnung"],["tip","amount of money you Trinkgeld"],["service","Bedienung, Service"],["extra","zusätzliche/r/s"],["coin","Münze"],["note","Geldschein, Banknote"],["to serve sb","jdn bedienen"],["midday","Mittag"]],
+  23: [["gap","Lücke"],["certainly","gern"],["There you go.","Bitte sehr. Bitteschön."],["at the moment","im Moment, gerade"],["tasty","schmackhaft, lecker"],["mixed","gemischt"],["Here you are.","Bitte sehr. Bitteschön."],["dessert","Nachtisch, Dessert"],["menu","Speisekarte, Speiseplan"],["Did you enjoy","Hat es Ihnen geschmeckt? your meal? – Oh yes, it was"],["sometime","irgendwann, (demnächst) einmal"],["to recommend","empfehlen"],["to act sth out","etw (mit verteilten Rollen) spielen"],["role","Rolle"],["to contrast sth","to compare"],["to produce sth","etw produzieren, etw erstellen"]],
+  24: [["canteen","Kantine, Mensa"],["to improve","verbessern, sich bessern"],["to present (sth","(etw jdm) vorstellen"],["notice","Ankündigung, Mitteilung, Aushang"],["competition","Wettbewerb"],["starter","what you eat before Vorspeise"],["course","(Menü:) Gang"],["balanced","ausgewogen"],["price","Preis"],["target group","Zielgruppe"],["to write up sth","etw formulieren, etw"],["to illustrate","illustrieren"],["drawing","Zeichnung"],["nourishing","nahrhaft"],["to pin","(mit einer Nadel) anheften"],["past sth","an etw vorbei"],["to rank","einstufen, (nach Rang) ordnen"],["category","Rubrik, Kategorie"],["design","Gestaltung, Entwurf"],["attractiveness","Attraktivität"],["overall","Gesamt-, insgesamt"],["effect","Wirkung, Effekt"]],
+  25: [["to do sport","Sport treiben"],["gym","a place"]],
+  26: [["diary","Tagebuch"],["winner","Gewinner/in"],["importance","Bedeutung"],["to provide","liefern, bieten, zur"],["suitable","geeignet"],["to suggest","vorschlagen"],["to keep a diary","to write about your ein Tagebuch führen"],["to make friends","Freunde"],["active(ly)","aktiv"],["no matter","egal, ganz gleich"],["runner","Läufer/in"],["run","Lauf"],["to hang out with","verbringen, mit jdm abhängen"],["lonely","einsam"],["platform","Plattform"],["to sum up","zusammenfassend"],["to make an effort","sich anstrengen, sich"],["to please sb","jdm einen Gefallen tun, jdm gefallen"],["step","Schritt"]],
+  27: [["to record","aufzeichnen"],["progress","Fortschritt(e)"],["entry","Eintrag, Beitrag"],["lazy","faul"],["to get a life","mit seinem Leben (endlich) etwas anfangen"],["to get sth in","etw ordnen, etw auf die Reihe kriegen"],["mental","geistig, mental"],["confidence","Selbstvertrauen"],["weight","Gewicht"],["to lose weight","abnehmen"],["to develop","(sich) entwickeln"],["energetic","voller Energie"],["to give up","aufgeben"],["motivated","motiviert"]],
+  28: [["account","Konto"],["tag line","Bildunterschrift"],["to get ready","sich fertigmachen"],["local","örtlich, lokal"],["kind","Art"],["to turn up","kommen, auftauchen"],["pressure","Druck"],["to accept","akzeptieren, annehmen"],["atmosphere","Atmosphäre"],["journey","Reise, Fahrt"],["summary","Zusammenfassung"],["record","Aufzeichnung(en)"],["development","Entwicklung"]],
+  29: [["to lift","heben, hochheben"],["to kick the ball","den Ball"],["to do gymnastics","turnen"],["to ride a bike","Fahrrad fahren"],["to ice skate","eislaufen"],["water polo","Wasserball"],["to box","boxen"],["to fail to do sth","etw nicht schaffen"],["goal line","Tor(aus)linie"],["to score a try","(Rugby:) einen Versuch erzielen"],["to stop sb from","jdn daran hindern, etw zu tun"],["to touch down the n touchdown","(Rugby:) den Ball niederlegen"],["match","Spiel, Partie"]],
+  30: [["coach","Trainer/in"],["to draw","unentschieden spielen"],["exciting","aufregend, spannend"],["match","Spiel, Partie"],["pitch","(Spiel-)Feld, (Fußball-)Platz"],["member","Mitglied"],["Congratulations","Herzlichen Glückwunsch zu …!"],["win","Sieg"],["motivating","motivierend"],["interested in sth","an etw interessiert"],["world cup","Weltpokal, Weltmeisterschaft"],["semi-final","to play"],["on and off the","auf und neben dem Spielfeld"],["especially","besonders"],["captain","Kapitän/in"],["skillful","geschickt, erfahren"],["brilliant","genial"],["to speak out","sich (öffentlich) gegen jdn aussprechen, jdn"],["school exchange","Schüleraustausch"],["to join sth","bei etw mitmachen"],["to go along with","mit jdm mitkommen/mitgehen"],["sex","Geschlecht"],["separate(ly)","getrennt, separat"],["nowadays","heute, heutzutage"],["to involve","beinhalten, erfordern"],["skill","Geschicklichkeit"],["to bowl","(Cricket:) werfen"],["to bat","(den Ball) schlagen"],["to catch","fangen"],["motor skills pl","Motorik"],["considerably","beträchtlich, erheblich"],["brain","Gehirn"],["popular","beliebt"],["empire","(Welt-)Reich"],["at all","überhaupt"],["however","allerdings, aber, doch, jedoch"],["team mate","Mannschaftskamerad"],["to be sb’s turn","Reihe sein"],["so far","bislang"],["to name","nennen"]],
+  31: [["mostly","hauptsächlich"],["right now","gerade (jetzt)"],["thought","Gedanke"],["attention","Aufmerksamkeit"],["to pay attention","auf etw achten, etw beachten"],["to agree","zustimmen, einverstanden sein"],["to split up","to go separate ways sich trennen"],["treadmill","Laufband"],["exercise bike","Trainingsfahrrad"],["guy","Typ, Kerl"],["to cover sth","etw (Thema) behandeln"]],
+  32: [["youth centre","Jugendzentrum"],["to introduce","einführen, vorstellen"],["although","even though, though obwohl"],["to invent","erfinden"],["equipment","Ausrüstung, Ausstattung, Geräte"],["identity","Identität"],["to perform sth","etw aufführen, etw"],["to strengthen","stärken"],["to be supposed to","sollen"],["to frighten sb","jdm Angst einjagen"],["opponent","Gegner/in"],["martial art","Kampfsport, Kampfkunst"],["combination","Verbindung"],["during","während"],["slave","Sklave/Sklavin"],["slavery","Sklaverei"],["to abolish sth","etw abschaffen"],["government","Regierung"],["to ban sth","etw verbieten"],["to practise sth","to repeat regularly etw ausüben"],["prison","Gefängnis"],["to colonize","kolonisieren"],["to found","gründen"],["plantation","Plantage"],["passionate(ly)","leidenschaftlich"],["root","Wurzel"],["stick","Stock"],["native American","amerikanische/r Ureinwohner/in"],["frozen lake","zugefrorener See"],["ice rink","Eisbahn"]],
+  33: [["manager","Leiter/in"],["activity","Tätigkeit"],["ramp","Rampe"],["jump","Sprunghindernis"],["matter","Sache, Angelegenheit"],["to join in","mitmachen"],["youngster","Jugendliche/r"],["basics pl","Grundlagen"],["pound","Pfund"],["to offer","bieten, anbieten"],["free of charge","gebührenfrei"],["glove","Handschuh"],["anger","Wut"],["to hit","schlagen, treffen"],["to disagree (with","(jdm) widersprechen"],["violence","Gewalt"],["control","Kontrolle"],["to make a point","ein Argument vorbringen"],["community","Gemeinschaft"],["role model","Vorbild"],["to respect","respektieren, achten"],["intern","Praktikant/In"],["ranking list","a list organized by Rangliste"],["speech","Vortrag, Rede"],["to exchange","austauschen"],["to convince","überzeugen"],["to be willing to","bereit/willens sein, etw zu tun"],["to compromise","einen Kompromiss eingehen"],["to make sure","dafür sorgen"],["thrilling","aufregend, spannend"],["discipline","Disziplin"],["spectator sport","Publikumssport"],["absolutely","completely, totally völlig, absolut"],["to share","teilen"],["rough","grob, rau"],["to promote sth","etw begünstigen, etw fördern"]],
+  34: [["flyer","Handzettel, Broschüre"],["exchange student","Austauschschüler/in another country"],["area","Gegend, Gebiet"],["to research sth","etw recherchieren, Nachforschungen über etw anstellen"],["opportunity","Möglichkeit"],["precise","genau, präzise"],["event","Veranstaltung"],["research","Recherche"],["attractive","ansprechend"],["map","Landkarte, Karte"],["to comment on sth","etw kommentieren, zu etw Stellung nehmen"],["to vote","abstimmen, wählen"]],
+  35: [["courageous","mutig"],["rights pl","Rechte"],["education","Schulbildung, Ausbildung"],["to award","(Preis) verleihen"],["peace","Frieden"],["Nobel Peace Prize [nəʊˌbel ˈpiːs","Friedensnobelpreis outstanding"],["to appoint sb sth","jdn zu etw ernennen"],["messenger","Botschafter/in"],["to donate","spenden"],["charity","Hilfsorganisation(en), wohltätige Zwecke"],["foundation","Stiftung"],["underprivileged","benachteiligt, unterprivilegiert"],["to treat","behandeln"],["equal(ly)","gleich"],["firefighter AE","Feuerwehrmann"],["to save","retten"],["to achieve sth","etw erreichen"],["even though","obwohl"],["to behave","sich verhalten, sich"],["to look up to sb","to have respect for zu jdm aufsehen, jdn bewundern"]],
+  36: [["celebrity","Prominente/r, Promi"],["appropriate","passend"],["common","verbreitet"],["disabled","behindert"],["to receive","erhalten, bekommen"],["disabled access","behindertengerechter"],["venue","Veranstaltungsort"],["citizen","(Staats-)Bürger/in"]],
+  37: [["amazing","toll, super, erstaunlich"],["fashion","Mode"],["bubbly","quirlig, lebendig"],["personality","Persönlichkeit"],["actress","a woman who acts"],["presenter","Moderator/in"],["activist","Aktivist/in"],["fame","Ruhm"],["to spread","Bewusstsein für etw schaffen"],["to overcome sth","etw überwinden"],["health issue","Gesundheitsproblem"],["congenital","angeboren"],["hearing loss","Schwerhörigkeit"],["anorexia nervosa","Magersucht anorexia"],["eating disorder","Essstörung"],["overweight","übergewichtig"],["to feature sth","über etw berichten"],["weight loss","Abnehmen"],["to hit sb","jdn anfahren"],["luckily","glücklicherweise"],["treatment","Behandlung"],["to recover","sich erholen"],["accident","Unfall"],["relationship","connection you have Beziehung, Verhältnis"],["entertainment","Unterhaltung"],["show","(Radio-, TV-)Sendung, (TV-)Serie"],["to present sth","etw (Sendung usw.) moderieren"],["to launch sth","etw (Unternehmen usw.) gründen"],["various","verschiedene/r/s"],["walking aids pl","Gehhilfe(n)"],["among","unter, bei"],["seating","Bestuhlung"],["to be made up of","aus etw bestehen"],["collapsible seat","Klappsitz"],["gig","(Rock-, Pop-"],["so that","damit"],["proportion","Anteil"],["disability","Behinderung"],["to star in a show","in einer Serie"],["to launch sth","etw starten"],["to weigh","wiegen"],["title","Titel"],["to inspire","anregen, inspirieren"],["to come across","auf etw stoßen, etw (zufällig) finden"],["details pl","Angaben, Daten"],["genuine","echt, authentisch"],["unedited","unbearbeitet"],["grateful","dankbar"],["proud (of sb/sth)","stolz (auf jdn/etw)"],["to conform to sth","einer Sache entsprechen"],["impossible","unmöglich"],["impossible","unerreichbare Maßstäbe targets"],["society","Gesellschaft"],["to criticize","kritisieren"],["skinny","mager, dürr"],["to fight back","sich verteidigen"],["to create sth","etw entwerfen, etw verfassen"],["petition","Petition"],["titled","mit dem Titel"],["to stop sth","etw verhindern"],["to promote sth","für etw werben"],["toxic","giftig, (äußerst)"],["diet","Diät"],["to call on sb to","jdn dazu auffordern, etw zu tun"],["to point out sth","auf etw hinweisen"],["promotion","Werbung"],["impressionable","leicht zu beeindrucken"]],
+  38: [["role","Rolle, Funktion"],["slimming product","Schlankheitsmittel"],["shy","schüchtern"],["self-confident","selbstbewusst"],["in public","in der Öffentlichkeit"],["seat","Sitz, Platz"],["to come across as","... wirken (like)"],["unfiltered","ungefiltert"],["to encourage sb","jdn dazu ermuntern, etw sth"],["slim","schlank"],["unhealthy","ungesund"],["to appear","(TV, Werbung:) auftreten"]],
+  39: [["to sort sth into","into groups of 3."]],
+  40: [["positivity","positive Einstellung"],["reply","Antwort, Erwiderung"],["comment","Kommentar, Stellungnahme"],["to go on a diet","eine Diät machen"],["to depend on sth","von etw abhängen"],["to get involved","mit jdm zu tun haben sb"],["most recent","jüngste/r/s"],["sb realizes sth","jdm wird/ist etw bewusst"],["to judge sb/sth","jdn/etw beurteilen"],["experience","Erlebnis, Erfahrung"],["helpful","nützlich, hilfreich"],["to support sb","jdm helfen, jdn"],["to influence","beeinflussen"]],
+  41: [["introduction","(Text:) Einleitung"],["to highlight","to show that"],["successful","erfolgreich"],["talented","begabt, talentiert"],["to set an example","Beispiel geben"],["ambassador","sb who represents"],["similar (to","(jdm/einer Sache) ähnlich"],["to represent","vertreten"],["to educate","unterrichten"],["public","Öffentlichkeit"],["in case","if/when"],["climate","Klima"],["climate change","Klimawandel"],["strike","Streik"],["movement","Bewegung"],["to protest","protestieren"],["parliament","Parlament"],["politician","Politiker/in"],["hand-painted","handgemalt"],["banner","Transparent"],["to strike","streiken"],["determined","entschlossen, willensstark"],["to admire","bewundern"],["to make up one’s","beschließen, (sich) entscheiden"],["to report on sth","über etw berichten"],["protest","Protest, Demonstration"],["big break","großer Durchbruch"],["to go viral","sich rasant (im Internet) verbreiten"],["to join sb in","sich jdm bei etw anschließen"],["to involve sb in","jdn an etw beteiligen"],["complaint","Klage, Beschwerde"],["to join sth","sich einer Sache anschließen"],["to support sth","etw unterstützen"],["from all walks of [frəm ˌɔːl wɔːks əv","aus allen Gesellschaftsschichten"],["to fix sth","to solve"],["spokesperson","sb who speaks for"],["threat (to","Gefahr, Bedrohung (für jdn/etw)"],["fossil fuel","Brennstoff"],["to get sth across","etw vermitteln"],["satisfaction","Zufriedenheit"],["audience","Publikum, Zuschauer, Zuhörer"],["to matter","wichtig sein, von Belang"],["crowd","Menschenmenge"],["to make an impact","Wirkung haben on sth"],["value","Wert"],["abroad","im/ins Ausland"],["responsible","verantwortungsbewusst"],["on a personal","persönlich, selbst ˈlevl]"],["to affect sb/sth","jdn/etw betreffen, jdn/etw beeinflussen"],["sb becomes aware","jdm wird etw bewusst"],["to share sth","über etw (vor Publikum) sprechen"],["spokesman","Sprecher"],["stage","Bühne"]],
+  42: [["to get drunk","sich betrinken"],["law","Gesetz(e), Recht"],["to manage to do","tun"],["weakness","Schwäche"],["to identify with","sich mit jdm/etw identifizieren"],["terrible","furchtbar"],["dictator","all-powerful leader Diktator/in"],["chances are that most probably","aller Wahrscheinlichkeit"],["serial murderer","Serienmöder/in"],["to turn out to","zu jdm/etw werden, sich als jd/etw herausstellen"],["internship","Praktikum"],["railway","Eisenbahn"]],
+  43: [["action","Handeln, Maßnahme(n), Aktion(en)"],["access (to sth)","Zugang (zu etw)"],["poverty","Armut"],["shocked","schockiert"],["sanitation","Abwasserkanalisation"],["to undergird","untermauern"],["magnitude","Größe"],["mind-blowing","irre, überwältigend"],["kind of","irgendwie"],["endless(ly)","unendlich"],["complex","komplex, kompliziert"],["solvable","lösbar"],["to solve","lösen"],["to animate","antreiben, mit Leben"],["to mean","meinen"],["to rob sb of sth","jdn einer Sache berauben"],["comprehensive","umfassend"],["crisis","Krise"],["in our lifetime","zu unseren Lebzeiten"]],
+  44: [["announcement","Ankündigung"],["to apply for sth","sich um etw bewerben"],["to greet","begrüßen"],["visitor","Besucher/in"],["twin town","Partnerstadt"],["vocational","Berufsausbildung ˈtreɪnɪŋ]"],["workshop","Werkstatt"],["further","Weiterbildung university, etc."],["to invite sb to","jdn auffordern, etw zu tun"],["a must","ein Muss"],["application","Bewerbung"],["training session","Schulungseinheit"],["trainer","Dozent/in"],["to settle down","die Plätze einnehmen, zur Ruhe kommen"],["consultant","sb who gives advice Berater/in"],["affairs pl","Geschäfte"],["town council","Stadtrat"],["dos and don’ts","lassen sollte"],["smooth(ly)","reibungslos, glatt"],["to be aware of","sich einer Sache bewusst sein"],["to have sth in","etw gemeinsam haben things as sb"],["to shake hands","Hände schütteln"],["to hold sth out","etw ausstrecken"],["to go on","weitermachen"],["smart(ly)","(Kleidung:) schick"],["bright","(Farbe:) kräftig, bunt"],["low-cut top","tief ausgeschnittenes Oberteil"],["to move on (to","(mit etw) weitermachen then move on"],["body language","communication using Körpersprache"],["body contact","Körperkontakt"],["to touch","berühren"],["to be prepared","bereit sein, etw zu tun"],["likely","wahrscheinlich"],["basic","einfach, grundlegend"],["to deal with sb","mit jdm zu tun haben"],["customer","person who buys"],["colleague","Kollege/-in"],["gentleman","Herr"],["greeting","Begrüßung"],["face to face","persönlich"]],
+  45: [["flight","Flug"],["delay","Verzögerung, Verspätung"],["to train for sth","machen"],["profession","Beruf"]],
+  46: [["to examine","untersuchen"],["neck","Hals"],["to decorate sth","etw schmücken"],["athletic","sportlich, athletisch"],["stranger","Fremde/r, Unbekannte/r"],["view","Ansicht, Meinung"],["idea (of sth)","Auffassung (von etw)"],["to compare with","sich mit etw vergleichen lassen"],["to conclude","schließen"],["handout","Arbeitsblatt, Handzettel"],["structure","Aufbau"]],
+  47: [["challenge","Herausforderung"],["to wind down","abspannen, sich entspannen"],["stressful","anstrengend, stressig"],["to switch off","abschalten"],["to relieve","Stress abbauen"]],
+  48: [["caffeine","Koffein"],["hidden","verborgen, versteckt"],["danger","Gefahr"],["fellow student","Mitschüler/in"],["report","Reportage, Bericht"],["headline","Überschrift"],["to jumble sth up","etw durcheinanderwerfen"],["coma","Koma"],["coroner","Gerichtsmediziner/in"],["overdose","Überdosis"],["life-support","Lebenserhaltungssystem"],["follow-up","Nachfassen"],["expert","Fachmann/-frau, Experte/-in"],["paramedic","Rettungssanitäter/in"],["to collapse","zusammenbrechen, zusammen-klappen"],["campaign","Kampagne, Aktion"],["ambulance","Rettungswagen"],["period (of time)","Zeitabschnitt, Zeit"],["playground","Spielplatz"],["lunch break","Mittagspause"],["caffeinated","koffeinhaltig"],["body","Leichnam"],["to appear","scheinen"],["to consume","zu sich nehmen"]],
+  49: [["to take one’s","seinen Platz einnehmen ˈsiːt]"],["first aid","Erste Hilfe"],["heart attack","Herzinfarkt"],["space of time","Zeitspanne day, etc."],["condition","(chronische) Krankheit"],["system","Organismus"],["total","Gesamt-, Gesamtmenge/-betrag"],["to cut down on","to have less of"],["to worry about","sich um etw Sorgen machen"],["safety","Sicherheit"],["as","während"],["at the same time [ət ðə seɪm","gleichzeitig"],["to make sb aware [ˌmeɪk əˈweər","jdm etw vor Augen führen sb’s attention"],["to put sb at","to put"],["at once","auf einmal"]],
+  50: [["appointment","Termin"],["course of","Therapie, Behandlung ˈtriːtmənt]"],["(intravenous)","ˈdrɪp]"],["to express","ausdrücken, äußern"],["permission","Erlaubnis"],["ability","Fähigkeit, Möglichkeit"],["obligation","Verpflichtung"],["substitute","Ersatz, Ersetzung"],["abuse","Missbrauch"],["serious(ly)","ernst, ernsthaft"],["statistics","Statistik(en)"],["to be heading","auf dem (besten) Weg zu etw sein"],["addiction","Sucht"],["to be at risk","to be"],["to be addicted","nach etw süchtig sein, von etw abhängig sein"],["prescription","(ärztliches) Rezept; rezeptpflichtig"],["pain reliever","Schmerzmittel"],["surgery","Operation"],["to suffer sth","etw erleiden"],["injury","Verletzung"]],
+  51: [["dependent (on","abhängig (von etw)"],["study","Untersuchung, Studie"],["(drug) misuser","sb who abuses drugs (Drogen-)Konsument/in"],["to injure","verletzen"],["to prescribe sth","etw verschreiben"],["to heal","heilen, abheilen"],["tablet","Tablette"],["to feed one’s","sich Stoff besorgen money"],["to be in pain","Schmerzen haben"],["to drop out of","die Schule abbrechen suddenly"],["to switch to sth","auf etw umsteigen"],["volunteer","(freiwillige/r)"],["counselling","Beratungsdienst you get"],["addict","Süchtige/r"],["sadly","leider"],["in time","rechtzeitig"],["in the first","überhaupt, von vornherein"],["case","Fall"],["to deal with sth","etw angehen, etw"],["painkiller","Schmerzmittel"],["to state sth","etw erklären, etw sagen, etw feststellen"],["to warn sb of","jdn vor etw warnen"],["overview","Überblick"],["incorrectly","unsachgemäß, falsch"],["sb runs out of","jdm wird etw knapp left"],["counselling","Therapie, Beratung"],["volunteer work","ehrenamtliche Tätigkeit"],["to blame sb","to say"],["sth is sb’s","jd ist schuld an etw sb"],["medication","Arzneimittel"]],
+  52: [["tough","hart"],["to do exercise","trainieren, sich fit halten"],["to study","lernen"],["method","Methode, Verfahren"],["medicine","Medizin"],["mental health","geistige Gesundheit"],["score","Punktzahl, Ergebnis"],["to set the course","die Weichen für etw stellen"],["studies pl","Studium, hier:"],["competition","Konkurrenz"],["extracurricular","außerschulisch"],["to care about sth","sich (nur) für etw interessieren"],["grade","Note"],["to waste","verschwenden, vergeuden"],["physical","körperlich, physisch"],["well-being","Wohlbefinden"],["to increase sth","etw steigern, etw"],["isolation","Vereinsamung"],["acid","Säure"],["to concentrate","sich (auf etw) konzentrieren"],["to focus (on sth)","sich (auf etw)"],["mark","Note"],["tutor","Nachhilfelehrer/in"],["honour","Ehre"],["to perform","(in einer Prüfung"],["intense","heftig, intensiv"],["psychological","related"],["support","Hilfe, Unterstützung"],["to struggle with","mit etw zu kämpfen haben"],["taboo","Tabu"],["to commit sth","etw (Tat, Verbrechen usw.) begehen"],["suicide","Selbstmord"],["quantity","Menge"],["awake","not sleeping/asleep wach"],["to pass","(Prüfung) bestehen"],["entire","ganze/r/s"],["on the other hand","andererseits, allerdings"],["privileged","priviligiert"],["success","Erfolg"]],
+  53: [["to cheat","schummeln, abschreiben, spicken"],["to remove sth","to take sth/sb away etw entfernen"],["to cope with sth","etw bewältigen"],["content","Inhalt"]],
+  54: [["style","Stil, Art"],["generalization","Verallgemeinerung"],["to avoid","vermeiden, meiden"],["honest(ly)","ehrlich, aufrichtig"],["to connect with","sich mit jdm (intensiv)"],["humour","Humor"],["pleasant","angenehm"],["polite","höflich"],["to apologize","sich entschuldigen"],["critical","kritisch"],["to get down to","zur Sache kommen about"],["rude","unverschämt"],["to take sb/sth","jdn/etw ernst nehmen talking about? –"],["to soften","mildern, abschwächen"],["to wonder","sich fragen"],["to mind","etw dagegen haben"]],
+  55: [["I’m afraid …","leider …"],["as if","als ob"],["slightly","leicht, ein wenig"],["somewhat","etwas, irgendwie"],["to borrow sth","sich etw ausleihen"],["vacancy","(Hotel:) freies Zimmer"],["disappointed","enttäuscht (von jdm/etw)"]],
+  56: [["to combat sth","etw bekämpfen"],["notice board","Schwarzes Brett"],["aim","Ziel"],["library","place where you can Bibliothek"],["to chill","chillen, relaxen"],["pool table","Billardtisch"],["to reach","erreichen"],["consensus","Übereinstimmung, Konsens"],["agreement","Übereinkunft"]],
+  57: [["to swap","tauschen, austauschen"]],
+  58: [["talk","Vortrag"],["sustainability","Nachhaltigkeit"],["to skim","(Text) überfliegen"],["unsure","unsicher"],["clothing","Kleidung, Bekleidung"],["manufacturer","Hersteller/in"],["to be committed","sich für etw engagieren, sich zu etw verpflichten"],["waste","Müll, Abfall"],["long-lasting","langlebig"],["glue","Klebstoff"],["to last long","lang halten"],["bin","Mülltonne, Mülleimer"],["trainers pl BE","Turnschuhe, Sportschuhe"],["regularly","regelmäßig"],["to commit to sth","sich für etw engagieren"],["pollution","(Umwelt-)Verschmutzung"],["to purchase","kaufen"]],
+  59: [["to be done with","mit etw fertig sein using sth"],["to end up","irgendwo landen place or situation"],["landfill","place where rubbish Mülldeponie"],["incinerator","a plant for burning Müllverbrennungsanlage"],["to pollute","verschmutzen"],["to join","to become"],["garbage","Müll, Abfall"],["to find one’s way","to arrive somewhere wohin gelangen by chance"],["debris","Rückstände, (Trümmer-)Teile"],["percentage","Anteil, Prozentsatz"],["to wash up","angespült werden"],["coastline","Küste"],["used plastic","Altplastik"],["recently","in letzter Zeit, neulich"],["as usual","wie üblich"],["brand","Marke"],["to lead the way","führend sein, wegweisend"],["commitment (to","dedication (to sth) Engagement (für etw)"],["accessory","Accessoire"],["entirely","völlig, vollständig"],["to team up with sb","sich mit jdm zusammentun"],["to take sth off","jdm etw abnehmen from sb"],["to chop sth up","etw zerkleinern, etw schreddern"],["to melt sth down","etw einschmelzen"],["to outperform sb","jdn übertreffen"],["sportswear","Sportbekleidung"],["wear","Abnutzung, Verschleiß"],["to get all the","all"],["to grind sth","etw zermahlen"],["there’s no/little","es hat keinen/wenig Sinn, etw zu tun"],["to participate (in","(an etw) teilnehmen sth)"],["to save sb/sth","jdn/etw vor etw bewahren from sth"],["worn out","abgenutzt, (Schuhe:) ausgelatscht"],["definitely","(ganz) bestimmt, auf"],["to be honest, …","ehrlich gesagt …"],["comfortable(-ly)","bequem, komfortabel"]],
+  60: [["except for","außer, abgesehen von"],["to be littered","littered with beer"],["seagull","Möwe"],["to pick sth up","etw aufheben"],["mess","Chaos, Sauerei"],["team leader","Teamleiter/in"],["truck","Lastwagen"],["pile","Stapel, Haufen"],["driver","Fahrer/in"],["to put in sth","investieren"],["stuff","Sachen, Zeug"],["meaning","Bedeutung"],["author","Verfasser/in, Autor/in"],["to dump","to dispose of waste (Müll) (wild) abkippen"],["to cooperate","to work with sb/sth zusammenarbeiten"],["deal","agreement, business Geschäft, Abkommen"],["to intend to do","die Absicht haben, etw zu tun; vorhaben, etw zu"],["to give sth away","etw verschenken"]],
+  61: [["billion","Milliarde"],["ton","Tonne"],["goods pl","Güter, Waren"],["to close sth down","etw schließen, etw"],["flow chart","Flussdiagramm"],["once","sobald"],["contents","Inhalt"],["to dispose of sth","etw entsorgen, sich einer Sache entledigen"],["plant","Werk, Fabrik"],["to contain","enthalten"]],
+  62: [["feeling","Gefühl, Ansicht, Meinung"],["purchase","Kauf, Einkauf"],["to afford sth","sich etw leisten"]],
+  63: [["saying","Sprichwort"],["fool","Narr"],["to part","auseinandergehen, (sich) trennen"],["to correspond to","einer Sache entsprechen"],["luxury","Luxus"],["catalogue","Katalog"],["technological","technologisch, technisch"],["piece of equipment [ˌpiːs əv","a device, part of"],["to get by with sth","mit etw auskommen"],["to break down","kaputtgehen"],["to admit","e.g He admitted"],["a ton of","jede Menge"],["to earn","verdienen"],["to save","<>"],["store","Laden, Geschäft"],["to fall in love","sich"],["dust","Staub"],["to change one’s","seine Meinung ändern first, but then"]],
+  64: [["to drop","(tot) umfallen"],["printer","Drucker"],["jacket","Jacke, Jackett"],["to own","besitzen"],["waste of time","Zeitverschwendung"]],
+  65: [["to contain","enthalten"],["savings pl","money that is saved Ersparnisse"],["to go bankrupt","to be unable"],["zip","Reißverschluss"],["department","Abteilung"],["contract","(written) agreement Vertrag"],["to win a contract","einen Auftrag erhalten, den Zuschlag erhalten"],["industry","Branche"],["to ponder sth","über etw nachdenken, etw"],["despite","trotz"],["sacred","heilig"],["to be at a","an einem Scheideweg stehen, an einem Wendepunkt stehen"],["convenient","praktisch, bequem"],["to run errands","Besorgungen machen"],["to go for walks","spazieren gehen"],["attempt","Versuch"],["to raise awareness","Bewusstsein schaffen"],["impact","Auswirkung(en), Einfluss"]],
+  66: [["grocery store","Lebensmittelladen"],["drive","Fahrt (mit dem Auto)"],["to be situated","liegen"],["chain","Kette"],["to enter","betreten"],["to remind sb that","jdn daran erinnern, dass …"],["groceries pl","Lebensmittel"],["impressed","beeindruckt"],["to stretch","sich erstrecken"],["to stock a shelf","eine Regal befüllen"],["household items pl","Haushaltsartikel"],["towel","Handtuch"],["sheet","Bettlaken"],["trolley","Einkaufswagen"],["aisle","Gang"],["sweater","Pullover"],["cash desk","Kasse"],["chatty","geschwätzig"],["to pass sth down","etw an jdn weiterreichen"],["to bag sth","to put"],["surprised","überrascht, erstaunt"],["to tip sb","jdm ein Trinkgeld geben"],["tax","Steuer"],["sales tax AE","Mehrwertsteuer"]],
+  67: [["to shadow sb","to follow"],["to ruin","ruinieren"],["selection","Auswahl, Angebot"],["to be of","jdm behilflich sein"],["to be lucky","Glück haben"],["basket","Korb"],["to free up sth","etw freimachen, etw entlasten"],["miserable","(Wetter:) mies, grässlich"]],
+  68: [["arrangements pl","Vorbereitungen"],["mirror","Spiegel"],["condition","Zustand"],["left over","übrig (geblieben)"],["to announce","ankündigen"],["factor","Faktor"],["changing room","Umkleidekabine"],["to try sth on","etw anprobieren"]],
+  69: [["screen","Bildschirm"],["text (message)","SMS"],["voice call","Sprachanruf"],["figure","Zahl"]],
+  70: [["leisure","Freizeit"],["to consider sth","etw"],["tune","Lied, Song"],["to warn","(auf etw) hinweisen, warnen"],["interviewee","Person, die interviewt wird"]],
+  71: [["contributor","Autor/in (eines Magazins)"],["to make a living","to earn money doing seinen Lebensunterhalt mit etw verdienen"],["host","TV show host Moderator/in (einer Sendung"],["to broadcast","senden, verbreiten"],["subscriber","Abonnent/in"],["virtual","virtuell"],["to convert","umwandeln"],["circus skills pl","Zirkuskünste, Akrobatik"],["musician","Musiker/in"],["relaxed","locker, entspannt"],["to request sth","um etw bitten, sich etw"],["publicity","öffentliche Aufmerksamkeit"],["to release","veröffentlichen"],["soap opera","Seifenoper"],["identity theft","Identitätsdiebstahl"]],
+  72: [["sb realizes sth","jdm wird/ist etw bewusst"],["income","Einkommen"],["to advertise","werben, Werbung machen"],["safe(ly)","sicher, unbedenklich"],["intimate","intim"]],
+  73: [["to run sth","etw betreiben, etw führen"],["disadvantage","Nachteil"],["secure","sicher"],["effective","effektiv, wirkungsvoll"]],
+  74: [["to seek","suchen"],["practice","Praxis"],["unhappiness","Elend, Traurigkeit"],["sympathetic","being understanding mitfühlend, verständnisvoll"],["response","Reaktion, Antwort"],["growing","zunehmend, steigend"],["exaggerated","übertrieben"],["claim","Behauptung"],["sympathy","Mitgefühl, Verständnis, Mitleid"],["attention-seeking","Aufmerksamkeits-bedürfnis"],["term","Begriff"],["to grow out of sth","aus etw entstehen"],["criticism","Kritik"],["skin","Haut"],["up to a point","to"],["to turn sth into","etw aus etw machen sth"],["increasing(ly)","zunehmend"],["ordinary","gewöhnlich, normal"],["unfair","ungerecht, unfair"],["to accuse sb of sth","jdm etw vorwerfen"],["to experience sth","etw erleben, etw erfahren"],["depression","Depression(en)"],["easy-going","gelassen, unkompliziert"],["sb is embarrassed","jdm ist etw peinlich"],["to cover sth up","etw überspielen, etw"],["to open up","sich öffnen"],["at first","zunächst"],["disappointing","enttäuschend"],["take (on sth)","Sicht (auf etw), Meinung (zu etw)"],["abuse","Beschimpfung(en)"],["to deal with sth","mit etw zurechtkommen"],["to advise sb to do","jdm empfehlen, etw zu tun"],["to respond to sth","auf etw reagieren"],["to jump to","voreilige Schlüsse ziehen opinion too quickly"],["concerned","besorgt, beunruhigt"],["face-to-face","persönlich, unter vier"],["to assume","davon ausgehen, annehmen"],["to draw attention","Aufmerksamkeit auf etw lenken"],["outward","äußere/r/s"],["inward","innere/r/s"],["self","Selbst"]],
+  75: [["supportive","hilfsbereit, unterstützend"],["to remain","bleiben"],["anonymous(ly)","anonym"],["to appreciate","to admire"]],
+  76: [["critic","Kritiker/in"],["to imagine sth","sich etw vorstellen"],["to disappear","verschwinden"],["aspect","Gesichtspunkt, Aspekt"],["to encourage sth","etw begünstigen, etw"],["thinking","Denkweise, Denken"],["to display sth","etw zur Schau stellen"],["writer","Schriftsteller/in"],["to upload","hochladen"],["encouragement","Ermutigung, Zuspruch"],["instant","sofortig, unmittelbar"],["creative","schöpferisch, kreativ"],["approach","Herangehensweise, Ansatz"],["valuable","wertvoll"],["to expand sth","etw erweitern, etw"],["worldview","the way"],["bubble","Blase"],["background","Herkunft, Milieu"],["to come up with sth","sich etw ausdenken"]],
+  77: [["bar chart","Säulendiagramm"],["survey","Umfrage"],["inspiration","Anregung(en), Inspiration"],["to feel left out","sich übergangen/ ausgeschlossen fühlen"],["depressive","depressiv"],["symptom","Symptom, Anzeichen"],["moderate","gemäßigt, leicht"],["severe","schwer, ernst"],["trust","Stiftung"],["adult","Erwachsene/r"],["to concern sb/sth","jdn/etw betreffen"],["to identify","ermitteln, bestimmen"],["depressed","niedergeschlagen, deprimiert"],["to consider sth sth","to think"],["in conclusion","abschließend"],["to cause sb to do","jdn dazu veranlassen, etw zu tun"],["placemat","Tischset"],["sheet (of paper)","Blatt (Papier)"],["to redesign","umgestalten, neu konzipieren"],["individual","einzeln, individuell"],["corner","Ecke"],["solution","Lösung"]],
+  78: [["gender","Geschlecht"],["manner","Art, Weise"],["misunderstanding","Missverständnis"],["to address sb","jdn anreden"],["measurement","Maß"],["comma","Komma"],["decimal point","Dezimalpunkt"]],
+  79: [["salutation","(Brief:) Anrede"],["to feel comfortable","to feel good"],["explanation","Erklärung, Erläuterung"],["apology","Entschuldigung"],["request (for sth)","Bitte (um etw)"],["sign-off","(Brief, Telefonat usw.:) Schluss, Verabschiedung"],["in advance","im Voraus"],["order","Bestellung, Auftrag"],["head of sales","Verkaufsleiter/in"],["sales figures pl","Verkaufszahlen"],["sb is missing sth","jdm fehlt etw"]],
+  80: [["to design","gestalten, entwerfern"],["questionnaire","Fragebogen"],["to gather sth","etw sammeln, etw"],["device","machine, electronic (elektronisches) Gerät"],["graph","Diagramm, Grafik"],["pie chart","Tortendiagramm"],["finding","Ergebnis"]],
+  81: [["to unite","sich vereinigen"],["to form","bilden"],["attraction","Sehenswürdigkeit"],["castle","Burg, Schloss"]],
+  82: [["accommodation","Unterkunft"],["to summarize","zusammenfassen"],["camper van","Wohnmobil"],["caravan","Wohnwagen"],["resort","Ferienort"],["tent","Zelt"],["to show sb","jdn herumführen"],["to get to know","jdn kennenlernen new"]],
+  83: [["(travel) guide","Reiseführer"],["traveller","Reisende/r"],["independent","unabhängig"],["stay","Aufenthalt"],["base","Ausgangspunkt, Basis"],["landscape","Landschaft"],["booking","Reservierung, Buchung"],["countryside","area outside of"],["seaside","Küste"],["horrible","schrecklich"],["dormitory","a large room (often Schlafsaal"],["to explore","erkunden"],["to camp","kampieren"],["to be","gut/besser dran sein position"],["campsite","Campingplatz"],["to cause trouble","Ärger machen"],["sociable","gesellig, umgänglich"],["highly","sehr"],["National Trust","brit. Organisation für Denkmalpflege und Naturschutz"],["working holiday","Ferienpraktikum"],["to plant","to put seeds"],["to repair","reparieren"],["footpath","(Wander-)Weg, Pfad"],["hospitality","Bewirtung, Gastfreundschaft"],["hospitality","Aufenthalt bei einer Gastfamilie"],["rent","Miete"],["host","Gastgeber/in"],["to rent","mieten"],["flat BE","Wohnung"],["comforts pl","Annehmlichkeiten"],["expense","Kosten, Ausgabe(n)"]],
+  85: [["consequence","Konsequenz, Folge"],["opposite","gegenteilig"],["inconvenient","ungünstig gelegen, unpraktisch"],["ugly","hässlich"],["uncomfortable","unbequem"],["enjoyable","angenehm, erfreulich"],["unfriendly","unfreundlich"],["review","Rezension, Kritik"],["to rewrite","to write again"],["star","Stern"],["flatmate","Mitbewohner/in"],["convenient","günstig gelegen"],["location","Standort, Lage"],["bus route","Buslinie"],["surroundings pl","Umgebung"],["rating","Bewertung"]],
+  86: [["as soon as","sobald"],["since","weil"],["soaking wet","klatschnass"],["to lock","to secure"],["hike","Wanderung"],["to regret","bedauern, bereuen"],["to hitchhike","per Anhalter"],["to shine","scheinen"],["recommendation","Empfehlung"],["to be in charge","für etw zuständig sein"],["firstly","erstens"]],
+  87: [["voicemail","Mailbox"],["illusion","Täuschung, Illusion"],["to hop on/off","ein-/aussteigen"],["old town","Altstadt"],["murder","Mord"],["mystery","Rätsel, Geheimnis"],["puzzle","Rätsel"],["to spare sth","phr"],["entertaining","unterhaltsam"],["scary","gruselig, unheimlich"],["steep","steil"],["hill","Hügel, Berg"],["monarch","ruler of"],["view","Aussicht, Ausblick"],["informative","aufschlussreich, informativ"],["colourful","bunt, farbenfroh"]],
+  88: [["sight","Sehenswürdigkeit"],["to suppose","annehmen, glauben"],["lunchtime","Mittag"],["to let sb know","jdm Bescheid sagen"],["staff","the people who work Personal"],["out and about","unterwegs"],["I can’t wait!","I’m looking forward Ich kann es kaum erwarten!"],["to pick up the","ans Telefon gehen"],["to climb","steigen, klettern"],["entrance","Eintritt, Einlass"],["line AE","Warteschlange"],["to hurt","wehtun, schmerzen"],["to turn bad","sich verschlechtern, (Wetter:) umschlagen"],["to work sth out","to find"],["limit","Beschränkung"],["guided tour","Führung"],["while","Weile"],["to catch the","den Zug erwischen train just"],["queue BE","people lining up"],["relieved","erleichtert"]],
+  89: [["to celebrate","feiern"],["graduation","Abschluss, Schulabschluss"],["to select","auswählen"],["correspondence","exchange of letters Briefwechsel, Korrespondenz"],["length of stay","Aufenthaltsdauer"],["to reserve","reservieren"],["to enquire about","sich nach etw erkundigen"],["method of","Zahlungsart, Zahlungsweise"],["possibility","Möglichkeit"],["to require sth","etw benötigen, etw"],["to hike","wandern"],["to set up a tent","ein Zelt aufschlagen"]],
+  90: [["spelling","Buchstabieralphabet alphabet"],["memory","Gedächtnis"],["digit","figure, number from Ziffer"],["unless","außer wenn, es sei"],["underscore","Unterstrich"]],
+  91: [["to backpack","to travel with only mit dem Rucksack reisen"]],
+  92: [["to sketch","skizzieren"],["to lay","legen"],["eye-catching","prägnant, auffallend"]],
+  93: [["blended family","Patchworkfamilie"],["extended","erweitert"],["single parent","Alleinerziehende/r"],["single-parent","Einelternfamilie parent"],["nuclear family","Kernfamilie, Kleinfamilie"],["generation","Generation"],["to bring sb up","jdn großziehen, jdn aufziehen"],["to consist of","aus jdm/etw bestehen consists of one"],["to be familiar","mit etw vertraut sein, etw kennen"],["focus","Schwerpunkt"]],
+  94: [["to set up sth","etw einrichten, etw"],["to look sth up","etw (in einem Wörterbuch)"],["to discover","entdecken"],["apart (from)","(voneinander) entfernt, getrennt"],["to confirm","bestätigen"]],
+  95: [["to freak out","ausrasten, durchdrehen"],["to grow up","aufwachsen"],["to adopt sb","jdn adoptieren"],["double","Double"],["via","mittels, über"],["only child","Einzelkind"],["shared","gemeinsam"],["laugh","Lachen"],["to suspect","to guess"],["twin","one of two children Zwilling"],["identical twins","eineiige Zwillinge grew from one egg"],["adoption","Adoption"],["to give sb up","jdn zur Adoption freigeben"],["agency","Agentur, Behörde"],["set of parents","Elternpaar"],["adoptive parents people who adopt a","Adoptiveltern child and raise it"],["privilege","Privileg"],["relatively","vergleichsweise"],["well-off","wohlhabend"],["Jewish","related"],["to take sth on","etw übernehmen, etw annehmen"],["characteristic","Merkmal, Eigenschaft"],["respective","jeweilige/r/s"],["touchy-feely","körperbetont, emotional"],["reserved","zurückhaltend, reserviert"],["to warm to sb","to start"],["to reflect","widerspiegeln, wiedergeben"],["to separate","trennen"]],
+  96: [["to keep in touch","Verbindung bleiben"],["question mark","symbol showing that Fragezeichen"],["to divorce sb","sich von jdm scheiden"],["to share sth","sich etw teilen"],["parenthood","Elternschaft"],["to compete for","um etw konkurrieren"],["connection (to","Verbindung (mit jdm/etw), Bezug (zu"],["to estimate","schätzen"],["to move on with","seinen eigenen Weg gehen, das Vergangene hinter sich lassen"]],
+  98: [["to present","Schwierigkeiten darstellen, mit"],["openness","Offenheit"],["to text","eine SMS senden, simsen"],["to settle into","sich an etw gewöhnen comfortable in/with"],["intention (of","Absicht (etw zu tun) aim"],["to act as if","so tun, als ob"],["to get upset","sich aufregen, sich"],["mate","Kumpel, Freund"],["to tend to do","dazu neigen, etw zu tun"],["irony","saying"],["to watch out","vorsichtig sein"],["swear word","Schimpfwort"],["horrified","entsetzt"],["to swear","fluchen"],["piece of advice","Rat"]],
+  99: [["recipe","(Koch-)Rezept"],["to mean to do","to intend"],["to step foot in","etw betreten"],["aunt","Tante"],["by the way","übrigens"],["dishwasher","Spülmaschine"],["to rinse sth","etw (mit Wasser) abspülen"],["plate","Teller"],["to run out of","etw nicht mehr haben more of sth"],["to lay the table","den Tisch decken"],["hardly ever","kaum, so gut wie nie"],["to broaden one’s [ˌbrɔːdn wʌnz","den eigenen Horizont erweitern"]],
+  100: [["work experience","Praktikum"],["insurance","Versicherung"],["policy (on sth)","Richtlinie(n) (für etw), Politik"],["to apply (to","(für jdn/etw) gelten apply"],["employee","Beschäftigte/r"],["to disturb","stören"],["to download","herunterladen"],["to turn sth off","etw ausschalten"],["to silence","(Handy) stummschalten"],["to log on (to","sich (in etw) einloggen"],["brief","knapp, kurz"],["official","offiziell"]],
+  101: [["to bother sb","jdn stören"],["corridor","Flur"],["reception","Empfang(sbereich)"],["memo","note, short message Notiz, Vermerk"],["to gather","vermuten, sich etw denken"],["to regulate","regeln"],["to turn a blind","bei etw ein Auge zudrücken"],["nevertheless","trotzdem, dennoch"],["to guide","leiten"],["to restrict","einschränken"],["emergency","Notfall"],["to enforce sth","to make sure"],["warning","Verwarnung, Abmahnung"],["participant","Teilnehmer/in"],["open-plan office","office with lots of Großraumbüro"],["to insist","darauf bestehen"],["on silent","stummgeschaltet"],["to prevent","verhindern"],["furthermore","außerdem, darüber"],["drawer","Schublade"],["to distract sb","jdn ablenken"],["unnecessary","unnötig"],["landline","Festnetzanschluss"],["management","Geschäftsleitung, Führungskräfte"],["obviously","natürlich"],["flexible","flexibel"],["to get back to","sich bei jdm melden"],["supervisor","(direkte/r)"]],
+  102: [["radio","Werbespot (im Radio)"],["across","in ganz"],["What’s the","Was soll das? Was hat das für einen Sinn?"],["to switch off","ausschalten, ausmachen"],["consumer","Verbraucher/in"],["consumer culture","society that values Konsumkultur"],["provided","under"],["spending","Ausgabe(n)"],["developing","industry and"],["in itself","an sich"],["harmful","schädlich, nachteilig"],["distribution of","Wohlstandsverteilung materials are"],["to put out the","die Nachricht verbreiten"],["convinced","überzeugt"],["to make a","etw bewirken"],["lasting","dauerhaft"],["to consider sth","Rücksicht auf etw"],["Count me in!","Ich bin dabei!"],["to import","importieren, einführen"],["to consume","verbrauchen"],["to trade","Handel treiben"]],
+  103: [["answerphone","telephone answering Anrufbeantworter"],["broadcast","Sendung, Übertragung, Ausstrahlung"],["sensible(-ly)","vernünftig"],["varied","abwechslungsreich"],["to make sth","etw verwirklichen, etw ermöglichen"],["organizing","Organisationskomitee organizes an event"],["cancellation","Absage"],["running order","Ablaufplan"],["responsibility","Verantwortung"],["rewarding","erfüllend"],["to put one’s","sich für etw melden sth"],["pleasure","Vergnügen"],["in good spirits","guter Dinge, gut"],["common sense","gesunder"],["to apply sth to","etw auf etw anwenden sth"],["to get badly","einen schweren Sonnenbrand bekommen"],["to look after","kümmern"],["steward","Ordner/in"],["to give","den Weg erklären"],["to reunite","jdn/etw mit jdm wieder zusammenbringen"],["lost property","Fundsachen"],["owner","Besitzer/in, Inhaber/in"],["you name it","alles Mögliche"],["runner at large","etwa: Laufbursche für besondere Aufgaben"],["performer","anyone who performs Künstler/in, Darsteller/in"],["to sort out sth","etw klären, etw regeln"],["unexpected","unvorhergesehen"],["event","Ereignis"],["to get sunburned","sich einen Sonnenbrand holen"]],
+  104: [["occasionally","gelegentlich, ab und"],["to attract","Kunden gewinnen business"],["tutoring","Nachhilfe"],["to gain muscle","Muskeln aufbauen"],["prompt","Stichwort"]],
+  105: [["professional","related"]],
+  106: [["job","Stellenanzeige writes when they"],["federal","Bundes-"],["voluntary","Freiwilligendienst pay"],["covering letter","Anschreiben, Begleitschreiben"],["position","Stelle, Stellung"],["to fit into sth","sich"],["throughout …","in ganz …"],["recruiter","Personalvermittler/in"],["character","Charakter"],["quality","Eigenschaft"],["to aim to do sth","to intend"]],
+  107: [["job description","Stellenbeschreibung"],["depending on","je nach"],["competence","Kompetenz"],["computer","Computerkenntnisse computer"],["to fix","reparieren, flicken"],["struggle","Kampf"],["to enable sb to","to make it possible jdm ermöglichen, etw zu tun"],["one-way street","for"],["insight (into","Einblick(e) (in etw) understanding of"],["pedagogical","Lehrpersonal company"],["length of","Dienstzeit, Beschäftigungsdauer"],["largely","überwiegend"],["agricultural","landwirtschaftlich"],["conservative","konservativ"],["to be sensitive","to be understanding für jdn/etw Verständnis haben, verständnisvoll"],["CV BE","Lebenslauf"]],
+  108: [["pilgrimage","Pilgerreise"],["custom","Sitte, Brauch"],["surrounding area e.g. The","Umland, Umgebung"],["way of life","Lebensweise, Lebensart"],["obvious","klar (erkennbar)"],["doubt","Zweifel"],["to fail","(Prüfung) nicht"],["prediction","Voraussage, Vorhersage"]],
+  109: [["mother tongue","Muttersprache"],["school leaving","Schulabgangszeugnis get at"],["voluntary work","Freiwilligenarbeit"],["to be keen to do","etw unbedingt tun wollen"],["to gain","erwerben, erlangen"],["refugee","sb who had"],["to get on well","gut mit jdm auskommen with all my"],["to grant","to give"],["referee","Referenzgeber/in"],["to supply sth","to give"],["Yours sincerely","Mit freundlichen Grüßen"]],
+  110: [["work permit","Arbeitserlaubnis"],["foreign","ausländisch, fremd"],["to take time off","sich freinehmen"],["of a lifetime","einmalig"],["visa","Visum"],["to fasten one’s","sich anschnallen must fasten your seat belt."],["Off we go.","Los geht’s!"],["temporary","befristet"],["to apply for sth","etw beantragen"],["backpacker","Rucksackreisende/r"],["qualification","Abschluss, Ausbildung"],["towards the end","gegen Ende"],["pay","Lohn, Bezahlung"],["chef","(Chef-)Koch/Köchin"],["to fulfil","erfüllen"],["to be aimed at","sich an jdn/etw wenden, sich an jdn/etw richten"]],
+  111: [["member of staff","Mitarbeiter/in"],["cloudy","bewölkt"],["to get married","heiraten"],["bridesmaid","friend or sister of Brautjungfer"],["to cycle","Fahrrad fahren, radeln"]],
+  112: [["to get used to","used"],["jealous","neidisch"],["freezing","eiskalt"],["not literally","nicht wirklich"],["season","Jahreszeit"],["outback AusE","Hinterland, Busch"],["standard English","hochsprachliches Englisch"]],
+  113: [["bottle shop AusE","(konzessionierter) Spirituosenladen"],["festival","Fest, Festtag"],["sanctuary","place where animals Schutzgebiet, (Tier-)Pflegestation"],["infographic","Infografik"]],
+  114: [["(job) interview","Vorstellungsgespräch"],["to interview sb","mit jdm ein Vorstellungsgespräch"],["applicant","Bewerber/in"],["employer","Arbeitgeber/in"],["to divide","teilen"],["introductions pl","Vorstellung"],["further","weiter, weitergehend"],["on time","pünktlich"],["confident(ly)","selbstbewusst"],["eye contact","when you look"],["illness","Krankheit"],["to stick to sth","sich an etw halten"],["to respond","antworten"],["appropriate(ly)","angemessen"],["interviewer","Person, die ein"]],
+  115: [["to sew","nähen"],["representative","Vertreter/in"],["to attend sth","to take part"]],
+  116: [["to renovate","renovieren"],["to make a success [ˌmeɪk ə səkˈses","etw zum Erfolg führen, etw gelingt"],["to make a dream","sich einen Traum erfüllen"],["half-way","at"],["primary school","Grundschule"],["valley","Tal"],["rainy","regnerisch"],["confusing","verwirrend"],["to fast-forward","vorspulen, springen"],["cousin","Cousin/Cousine"],["apprenticeship","Lehre, Ausbildung"],["electrician","Elektriker/in"],["to make sense","vernünftig sein"],["to ignore sth","etw ignorieren"],["pedestrian","Fußgänger/in"],["to judge","zum Urteil kommen, der (begründeten) Meinung"],["to cross","überqueren"],["patient(ly)","geduldig"],["in sight","in Sicht"],["passenger","sb who travels"],["shopkeeper","Ladenbesitzer/in"]],
+  117: [["completion","Vervollständigung"],["impression","Eindruck"],["to settle down","Fuß fassen, sich eingewöhnen"]],
+  118: [["work visa","Arbeitsvisum"],["tanned","brown from being"],["scheme","Programm, Maßnahmen"],["down under","In/nach Australien"],["muscly","muskulös"],["warmth","Wärme"],["in italics","kursiv (gesetzt)"]],
+  119: [["to speculate","mutmaßen, spekulieren"],["natural wonder","Naturwunder"],["gambling","Glücksspiel"],["rock climbing","Klettern"],["skiing","Skifahren"],["horse riding","Reiten"]],
+  120: [["to enter sth","to take part"],["prize","Preis, Gewinn"],["to open the mind","den Geist öffnen"],["to attend sth","etw (Veranstaltung"],["stadium","Stadion"]],
+  121: [["day out","trip away for"],["mysterious(ly)","geheimnisvoll"],["not quite","nicht ganz"],["to turn out","sich herausstellen"],["treat","Leckerbissen"],["kickoff","Start, Anfang, Anstoß"],["season","Saison"],["unfortunately","leider"],["to disappoint sb","jdn enttäuschen"],["kind(ly)","nett, freundlich"],["interstate AE","Autobahn, Fernstraße"],["terrifying","entsetzlich"],["to be scared of","Höhenangst haben mountain – I’m"],["to stamp one’s","mit den Füßen trampeln stamped their feet"],["deafening","ohrenbetäubend"],["thunder","Donner"],["to rush","eilen"],["bucket","Eimer"],["foot","Fuß (ca. 30,5 cm)"],["opening ceremony","a small show at"],["brass band","Blasorchester"],["national anthem","Nationalhymne"],["in person","persönlich, selbst"],["opposing","gegnerisch"],["speed","Geschwindigkeit"],["crack","Knall, Krachen"],["inactivity","Untätigkeit"],["burst","Ausbruch, Explosion"],["violent","brutal, gewalttätig"],["to knock sb down","jdn niederschlagen, jdn umhauen"],["to kick a ball","Ball schießen"],["halfway through","mitten"],["to enjoy oneself","sich gut amüsieren"],["a bunch of","ein Haufen Leute, ein paar Leute"],["to cheer","jubeln, anfeuern"],["to score","einen Punkt machen, ein Tor erzielen"]],
+  122: [["to be about to","etw gleich tun; im about"],["capacity","Fassungsvermögen"],["sea level","Meereshöhe"],["to be considered","als etw angesehen werden"],["spectator","Zuschauer/in"],["pure","pur, rein"],["brutality","Brutalität"],["sudden","plötzlich, jäh"],["attitude","Einstellung, Haltung"],["during the","im Verlauf von etw happening, thoughout sth"],["evidence","Indizien, Hinweise"],["to support","(Argument) untermauern, stützen"]],
+  123: [["hint","Hinweis, Tipp"],["light","hell"],["to commence","beginnen, anfangen"],["frightening","beängstigend"],["to work out","sich entwickeln, laufen"],["to turn out","sich entwickeln, laufen"]],
+  124: [["awesome","beeindruckend, toll"],["wide open spaces [waɪd ˌəʊpən","weites Land, Weiten covered by housing"],["cattle","Vieh, Rinder; Stück"],["urban","städtisch, Stadt-"],["mechanic","Mechaniker/in"],["patch of land","(kleines) Stück Land"],["crop","Ackerpflanze, Getreide"],["farmhand","Landarbeiter/in"],["instruction","Anleitung, Anweisung"],["to handle horses","mit Pferden arbeiten"],["cow","Kuh"],["bull","Stier"],["social occasion","social event"],["carnival","Karneval"],["procession","Festzug, Umzug"],["stall","(Markt-)Stand"],["to kick off","starten, anfangen"],["cattle drive","Viehtrieb"],["to ride on","reiten"],["campfire","Lagerfeuer"],["city folk","Stadtmenschen, Städter"],["taste","Kostprobe, Vorgeschmack"],["to keep sb safe","auf jdn aufpassen, jdn"],["arrival","Ankunft"],["rider","Reiter/in"],["grounds pl","Anlage, Gelände"],["spectacular","eindrucksvoll, spektakulär"],["You bet!","Und ob!"],["apparently","anscheinend"],["broken bone","Knochenbruch"],["to step on","auf jdn/etw treten one’s foot on"],["contest","Wettbewerb"],["to prove (sth to","(jdm etw) beweisen"],["to compete","(bei einem Wettbewerb) antreten"],["to make money","Geld verdienen"],["professional","Profi"],["prize money","Preisgeld"],["amateur","Amateur(-)"],["unpredictable","unberechenbar"],["organizational","organisatorisch, Organisations-"],["to rely on sb","auf jdn angewiesen sein"],["cruel","grausam"],["campaigner","Wahlkämpfer/in"],["at the end of","letzten Endes, letztlich"],["romantic","romantisch"],["You’re welcome.","Bitte (sehr). Gern"]],
+  125: [["extract","Auszug, Ausschnitt"],["to line the","die Straße säumen, Spalier stehen"],["appearance","how"],["old-fashioned","altmodisch"],["painted sign","handgemaltes Schild"],["furious(ly)","wild, heftig"],["to throw sb off","jdn abwerfen"],["atmospheric","stimmungsvoll"],["fireworks pl","Feuerwerk"],["to demonstrate","etw vorführen"],["to scare sb","jdn erschrecken, jdm Angst einjagen"],["flash","Blitz(licht)"],["bang","a sudden loud noise Knall"],["to divide sth up","etw aufteilen"],["responsibility","Zuständigkeit, Aufgabe"],["to draw sth up","etw entwerfen"],["to break the ice","das Eis brechen, einander kennen- lernen, miteinander ins Gespräch kommen"],["costume","Kostüm"]],
+  126: [["trade fair","(Branchen-/Handels-)"],["to register","sich anmelden"],["motor show","Automobilmesse"],["to exhibit","ausstellen"],["exhibitor","Aussteller/in"],["registration","Anmeldung"],["floor plan","Grundriss, Übersichtsplan"],["exhibition","Ausstellung, Messe"],["highlight","Höhepunkt"],["press","the media and their Presse"],["brand new","brandneu, nagelneu"],["vehicle","Fahrzeug"],["car dealership","business that sells Autohaus, Autohändler/in"],["to test drive","probefahren"],["model","Modell"],["concept car","Konzeptauto"],["automotive","Automobil-, Auto-"],["special deal","Sonderangebot"],["to cater for all [ˌkeɪtə fər ˌɔːl","für jeden Geschmack etw bieten"],["display","presentation of"]],
+  127: [["motoring","Autofahren, Automobil-"],["ride","Fahrt"],["convention","Konferenz, Tagung"],["cab","Taxi"],["brochure","Prospekt, Broschüre"],["Formula One","Formel 1"],["racing","Rennen, Renn-"]],
+  128: [["origin","Ursprung"],["public holiday","Feiertag"],["harvest","Ernte"],["turkey","Truthahn"],["corn AE","Mais"],["pumpkin","Kürbis"],["native","einheimisch"],["settler","Siedler/in, Kolonist/in"],["to grow sth","anbauen"],["immigrant","Einwanderer/-in"],["legal(ly)","gesetzlich, legal"],["celebration","Feier, Fest"],["shut","geschlossen"]],
+  129: [["festival","Fest, Festtag"],["New Year’s Eve","Silvester"],["reunification","October Wiedervereinigung"]],
+  130: [["to queue","sich (in einer"],["gate","Tor, Pforte"],["height","how tall someone is Höhe, Körpergröße"],["to score a point","einen Punkt erzielen"],["caption","explanation under"],["to feed","füttern"],["sign","Hinweisschild"],["to be fast","(tief und) fest schlafen"],["immediately","sofort, unverzüglich"]],
+  131: [["to challenge sb","jdn herausfordern"],["to exert","(Einfluss usw.) ausüben"],["ambition","Ziel, Wunschtraum"],["aspiration","Bestreben, Ziel"],["peer pressure","sozialer Druck"],["sense of","feeling that one is Zugehörigkeitsgefühl part of"]],
+  132: [["indigenous","einheimisch"]],
+  133: [["stolen","geraubt, gestohlen"],["inferior","minderwertig"],["eventually","schließlich, am Ende"],["ancestor","Vorfahre/-in, Ahne/-in"],["scholarship","Stipendium"],["school-leaving","exam sat at"],["conservationist","Naturschützer/in"],["elder","Ältere/r, Älteste/r"],["in a way","sozusagen"],["bush","Australian term for Busch"],["aged care home","Altenpflegeheim home BE"],["vocational","training"]],
+  134: [["islander","Insulaner/in, Inselbewohner/in"],["territory","Gebiet, Territorium"],["professional","professionell"],["association","Verband, Vereinigung"],["on top of sth","zusätzlich zu etw"],["tiny","klein, winzig"],["saltwater","Salzwasser"],["to find one’s way [faɪnd wʌnz ˌweɪ","sich zurechtfinden way"],["public transport","öffentliche Verkehrsmittel"],["timekeeping","Pünktlichkeit"],["to get on (with","to be friendly with (mit jdm) zurechtkommen"],["open-minded","aufgeschlossen, unvoreingenommen"],["media studies pl","Publizistik, Medienwissenschaft"],["hopefully","hoffentlich"],["to value","schätzen, wertschätzen"],["career path","(beruflicher) Werdegang, Laufbahn"]],
+  135: [["athlete","Sportler/in"],["aboriginal","australische/r Ureinwohner/in"],["strait","Meerenge, Straße"],["to remove sb from","jdn jdm wegnehmen from sb"],["authority","Behörde"],["to carry sth out","etw (Tätigkeit)"],["to integrate","eingliedern"],["charitable","wohltätig"],["to abuse sb","jdn missbrauchen"],["responsible","verantwortlich"],["care","Betreuung, Obhut, Fürsorge"]],
+  136: [["rather than","anstatt"],["to pass sth on","etw weitergeben"],["tribe","Stamm"],["shore; shores pl","Küste, Ufer; Land"],["unity","Einheit"],["character","person"]],
+  137: [["rite of passage","sth that"],["coming of age","Erwachsenwerden"],["to distinguish","jdn/etw von jdm/etw unterscheiden sb/sth and sb/sth"],["adolescent","Heranwachsende/r, Jugendliche/r"],["maturity","Reife"],["independence","Unabhängigkeit"],["strength","Stärke, Kraft"],["money management","dealing with (one’s Umgang mit Geld"],["sense of","Verantwortungsgefühl duties"],["wisdom","Weisheit, Klugheit, Lebenserfahrung"],["understanding","Verständnis"],["to relate to sth","mit etw"],["siblings pl","Geschwister"],["significant","bedeutend"],["bank account","Bankkonto"],["driving test","Fahrprüfung"],["to undergo sth","sich einer Sache"],["to vote","to choose an option abstimmen, wählen"],["election","Wahl"],["county","Grafschaft"],["overseas","im/ins Ausland"],["rail","Bahn, Eisenbahn"],["pass","ticket (usually for Monatskarte, Zeitkarte"],["tall tales pl","abenteuerliche Geschichten"],["to pay one’s own","alles selbst bezahlen financial help from"],["casual job","Gelegenheitsarbeit"],["to cover sth","etw bedecken"],["senior","älter, höherrangig"],["wearer","Träger/in"],["unique","einzigartig"],["tattoo artist","Tätowierer/in"],["achievement","Leistung, Errungenschaft"],["a big deal","eine große Sache"],["to go crazy","durchdrehen"],["to hire sth","etw mieten"],["ballroom","Festsaal"],["gown","Abendkleid"],["make-up artist","sb who puts make-up Visagist/in"],["grown up","erwachsen"]],
+  138: [["curious","eager"],["descendant","Nachkomme"],["to govern","regeln, bestimmen"],["outsider","Außenstehende/r"],["hairstyle","Frisur"],["horse-drawn","Pferdefuhrwerk pulled by horses"],["farming","Landwirtschaft"],["social gathering","geselliges"],["interaction","Miteinander"],["to tolerate","dulden, tolerieren"],["to turn 16","to have one’s 16 th 16 werden"]],
+  139: [["to commit sth to","etw (voll und ganz) committed his whole einer Sache wid-- men, etw einer Sache anvertrauen"],["to force","zwingen"],["inexperienced","unerfahren"],["label","Etikett, Bezeichnung"],["to interpret","auslegen"],["liberal(ly)","freizügig, liberal"],["binge drinking","Komasaufen"],["drug-taking","Drogenkonsum"],["sexual","sexuell"],["freedom","Freiheit"],["to oppose sth","gegen etw sein, etw"]],
+  140: [["housekeeping","Hauswirtschaft"],["practice","Praktik, Verhaltensweise, Maßnahme"],["to print","drucken"],["to put sth up","etw aufhängen"],["to remove sth","etw aus etw nehmen sth"],["keycard","Schlüsselkarte"],["holder","Halter"],["air conditioning","Klimaanlage"],["electricity","Strom"],["to activate","aktivieren"],["power","Strom"],["toiletries pl","Hygieneartikel, Kosmetikartikel"],["conditioner","Haarspülung"],["moisturizer","Feuchtigkeitscreme"],["dispenser","Spender"],["disposable","Einweg-, Wegwerf-"],["container","Behälter"],["to require","wünschen, benötigen"],["wet","feucht, nass"],["breakfast buffet","Frühstücksbüfett"],["jam","Marmelade"],["packaging","Verpackung"],["complaint","Klage, Beschwerde"],["hygienic","hygienisch"],["proper(ly)","richtig, ordentlich"],["to smell","riechen, stinken"],["heating","Heizung"],["liquid","flüssig"]],
+  141: [["bar of soap","Stück Seife"],["basin","Waschbecken"],["to be used to sth","to be familiar with etw gewohnt sein"],["to manage","zurechtkommen"]],
+  142: [["phone-in","Sendung mit Hörerbeteiligung per Telefon"],["A levels pl BE","Abitur"],["exhausted","erschöpft"],["balance","Gleichgewicht, Ausgleich"],["walking holiday","Wanderurlaub"]],
+  143: [["to make use of","etw verwenden, etw nutzen"],["economic","wirtschaftlich, Wirtschafts-"],["based in","mit Sitz in, ansässig"],["to find","feststellen"],["electronics","Elektronik"],["educational","Bildungs-, schulisch"],["to go out of","to become unpopular aus der Mode kommen"],["to encounter","auf jdn/etw stoßen, jdm/einer Sache"],["technician","Techniker/in"]],
+  144: [["not unless","nur (dann), wenn"],["tribal","Stammes-"],["to preserve","bewahren"],["to drop sth","etw fallen lassen, etw"],["appliance","Elektrogerät, Haushaltsgerät"],["demand","Forderung"],["decline","Niedergang"],["original(ly)","ursprünglich"]],
+  145: [["similarity","Ähnlichkeit"],["to be intolerant <> to tolerate sb","intolerant gegenüber jdm/etw sein"],["to be suspicious","jdm gegenüber misstrauisch sein"],["race","Rasse"],["to succeed","Erfolg haben"],["to draw","ziehen"],["fear","Angst"],["interethnic","Spannung(en) zwischen ethnischen"]],
+  146: [["to shoot sb","jdn anschießen, jdn erschießen"]],
+  147: [["to take to the","to protest"],["segregation","Rassentrennung"],["discrimination","Diskriminierung"],["African American [ˌæfrɪkən","afroamerikanisch; Afroamerikaner/in"],["observer","Beobachter/in"],["to resolve","(Problem usw.:) lösen"],["equality","Gleichheit"],["democratic","demokratisch"],["majority","Mehrheit"],["to elect","wählen"],["president","Präsident"],["power","Macht, Einfluss"],["law enforcement","Polizei (und Justiz), Exekutive"],["these days","heutzutage"],["to carry sth","etw mit sich führen, etw bei sich tragen"],["police officer","Polizist/in, Polizeibeamter/-in"],["on patrol","auf Streife"],["footage","Aufnahme(n)"],["to interact with","mit jdm zu tun haben sb"],["to provide","Beweise liefern"],["to go wrong","schiefgehen, aus dem Ruder laufen"],["minority","Minderheit"],["worrying","beunruhigend, besorgniserregend"],["routine","routinemäßig, Routine-"],["non-violent","gewaltlos, gewaltfrei"],["fatal outcome","tödlicher Ausgang"],["unarmed","unbewaffnet"],["civilian","Zivilist/in"],["shooting","Erschießung"],["incident","Vorfall"],["justice","Gerechtigkeit"],["to bring sth to","etw öffentlich machen, etw"],["overnight","über Nacht"],["to turn to sth","zu etw werden, sich"],["obscure","(völlig) unbekannt"],["systemic","systemimmanent, systembedingt"],["racism","discrimination against Rassismus"],["victim","Opfer"],["to graduate","den (Schul-/Universi- täts-)Abschluss"],["to be due to do","etw (laut Plan) machen sollen"],["business course","a program of study for kaufmännische Ausbildung"],["colored AE","farbig"],["gentle","sanft"],["giant","Riese"],["criminal","kriminell"],["convenience","Laden um die Ecke, Spätkauf"],["working class","Arbeiterklasse"],["suburb","Vorort"],["to rob","ausrauben, überfallen"],["liquor store AE","(konzessionierter) Spirituosenladen"],["to shoot sb dead","to kill"],["police","Polizeibehörde police force"],["to claim","to state"],["to attack","angreifen, attackieren"],["to attempt to do","versuchen, etw zu tun"],["gun","(Schuss-)Waffe"],["to deny sth","to say that"],["eyewitness","sb who saw an incident Augenzeuge/-in"],["to answer back","Widerworte geben, frech werden"],["sidewalk AE","Bürgersteig, Gehweg"],["robbery","the action of stealing Überfall, Raub"],["to gather","sich versammeln"],["to demand","fordern"],["to remove sth","etw wegbringen"],["riot","Aufstand, Aufruhr"],["poor choices pl","falsche"],["bad luck","Pech"],["police force","Polizei, Polizeiapparat"]],
+  148: [["civil rights pl","Bürgerrechte"],["racial","Rassen-"],["industry","Industrie"],["to refuse to do","to say you will not do sich weigern, etw zu tun"],["to give sth up","jdm etw überlassen yours"],["act","Handlung, Tat, Akt"],["focus","the centre of interest Brennpunkt"],["controversial","umstritten"],["figure","Persönlichkeit"],["aggressive","aggressiv"],["peaceful(ly)","friedlich"],["racist","Rassist/in"],["to create sth","etw hervorrufen"]],
+  149: [["scene","Ort, Tatort"],["killing","Ermordung, Tötung"],["point of view","Perspektive"],["suspect","Verdächtige/r"],["speculation","Mutmaßung(en), Vermutung(en)"]],
+  150: [["flatshare","Wohngemeinschaft"],["to arise","(Probleme usw.:)"],["mining","Bergbau"],["engineering","Maschinenbau"],["mushroom","Pilz"],["pan","Topf, Pfanne"],["spicy","würzig, scharf"],["smell","Geruch, Gestank"],["mint","Minze"],["pickled","(sauer) eingelegt"],["preparation","Vorbereitung"]],
+  151: [["cartoon","Karikatur, Zeichnung"],["cynical","zynisch"],["foreground","Vordergrund"],["figure","Figur"],["distance","Ferne"],["to refer to sth","sich auf etw"],["to suggest","andeuten, nahelegen"],["sailing ship","Segelschiff"],["exploration","Erforschung, Entdeckung"],["exploitation","Ausbeutung"]],
+  152: [["fundraiser","Spendensammler/in"],["phone duty","Telefondienst"],["to be on a break","Pause machen"],["to put sb","(Telefon:) jdn durchstellen"],["to catch sth","etw verstehen, etw"],["to hold the line","(Telefon:) am"],["to answer the","ans Telefon gehen answers"],["to leave a","eine Nachricht hinterlassen"],["Speaking.","(Telefon:) Am"],["to connect sb","(Telefon:) jdn"],["to take a","(Telefon:) jdm etw ausrichten"],["Don’t mention","Nichts zu danken."]],
+  154: [["sporty","sportlich"],["happiness","Zufriedenheit, Glück"]],
+  155: [["to hurry","eilen"],["football","Fußballtraining football practice once"],["elderly","ältere/r/s"],["to keep to sth","sich an etw halten, bei etw bleiben"],["quote","Zitat"]],
+  156: [["to instruct sb","jdn anweisen, etw zu tun"],["to fund","finanzieren"],["competitor","sb who takes part"],["vest","Laufshirt"],["race","Rennen"],["official","sb who is"],["in broad","am hellichten Tag, vor aller Augen"],["to tidy (up)","aufräumen"],["on several","mehrfach əˈkeɪʒnz]"],["to wash the","(Geschirr) spülen"],["press kit","Pressemappe"],["to process sth","etw bearbeiten"]],
+  157: [["globe","Welt, Erde, Globus"],["official language","Amtssprache"],["native speaker","sb who has spoken"],["aviation","Luftfahrt, Luftverkehr"],["diplomacy","Diplomatie"],["Universal Postal","Weltpostverein controls mail"],["trade","Handel"],["United Nations pl","Vereinte Nationen"],["to host sth","etw (Veranstaltung usw.) ausrichten"]],
+  158: [["open day","Tag der offenen Tür"],["to ask for","nach dem Weg fragen"],["socializing","Geselligkeit"]],
+  159: [["to profile","to describe"],["passion","Leidenschaft"],["role-playing game","Rollenspiel"],["stereotype","Klischee"],["social misfit","sb who does not fit Außenseiter, Sonderling"],["fantasy world","world that does not Traumwelt, Phantasiewelt"],["unsociable","kontaktarm, menschenscheu"],["strategy","Strategie"],["to collaborate","zusammenarbeiten"],["guild","Zunft, Gilde"],["common","gemeinsam"],["multilingual","mehrsprachig"],["aptitude","Talent, Befähigung"],["to keep up sth","mit etw weitermachen"],["native language","Muttersprache"],["essential","wesentlich, unerlässlich"],["building site","Baustelle"],["realistic","realistisch"],["nomad","Nomade/-in"],["hardly","kaum"],["Guess what!","Stell Dir vor! Wissen Sie was?"],["fluent","(Sprache:) fließend"],["career prospects pl","Berufsaussichten"],["to feel confident","sich sicher fühlen"]],
+  160: [["antisocial","ungesellig, unsozial"]],
+  161: [["cute","süß, niedlich"],["accent","Akzent"],["higher education","Hochschulbildung"],["quotation","Zitat"],["provocative","provokant, provozierend"],["career goal","berufliches Ziel"],["testimony","Aussage, Erfahrungsbericht"],["persuasive","überzeugend, schlagkräftig"]],
+  162: [["to get the wrong","etw falsch verstehen sth"],["politeness","Höflichkeit"],["complicated","kompliziert"],["theoretical","theoretisch, spekulativ"],["fortunately","glücklicherweise, zum"],["to offend sb","jdn beleidigen, jdn"],["disrespectful(ly)","unhöflich, respektlos"],["constantly","ständig, andauernd"],["to interrupt","unterbrechen"],["inappropriate(ly)","unangemessen"],["flirty","kokett"],["to hug sb","jdn umarmen"],["upset","aufgebracht, verärgert"],["unwelcoming","abweisend"],["to be to blame","schuld sein"],["to come down to sth","auf etw hinauslaufen"],["individualist","related"],["respectful","showing respect for respektvoll"],["automatic(ally)","automatisch"],["authority","Autorität, Obrigkeit"],["to say what’s on","sagen, was man denkt thinking"],["punctuality","Pünktlichkeit"],["to visit","zu Besuch sein"],["cheek","Wange"],["to add up","sich summieren"],["convincing","überzeugend"],["norm","Norm"],["guideline","Richtlinie, Empfehlung"],["niece","Nichte"],["bureaucracy","Bürokratie"],["punctual","pünktlich"]],
+  163: [["original","eigene/r/s"],["singing","Gesang"],["to unfriend sb","(soziale Medien:) jdn als Freund löschen"],["confused","verwirrt"],["welcoming","freundlich, gastfreundlich"],["embarrassed","verlegen, peinlich berührt"],["annoyed","angry, disappointed verärgert, sauer"],["to place importance [ˌpleɪs ɪmˈpɔːtns","einer Sache Bedeutung beimessen, auf etw Wert"],["hurtful","verletzend"]],
+  164: [["to make an","einen Eindruck hinterlassen"],["tactful","taktvoll"],["present","anwesend"],["to give sb a hug","jdn umarmen"]],
+  165: [["to gain sth from","sich etw von etw versprechen, etw mit etw"],["tons of …","jede Menge …, tonnenweise …"],["impolite","unhöflich"],["trivial","banal, belanglos"]],
+  166: [["printing plant","large factory where Großdruckerei"],["workplace","Arbeitsplatz"],["hazard","Gefahr"],["safety procedures","Sicherheitsmaßnahmen, Sicherheits-bestimmungen"],["health and safety","Arbeitsschutz, Arbeitssicherheit"],["safety sign","Sicherzeitszeichen"],["ear protectors pl","Gehörschutz"],["helmet","Helm"],["machinery","Maschinen, Geräte"],["safety glasses pl","Schutzbrille"],["to beware of sth","sich vor etw"],["forklift truck","Gabelstapler"],["to catch fire","Feuer fangen"],["electric shock","Stromschlag"],["protective gloves","Schutzhandschuhe sb’s hands from"],["to pull sth down","etw herunterziehen"],["guard","Schutzhaube"],["to crush","zerquetschen"],["protective clothing [prəˌtektɪv","Schutzkleidung"],["to take notice of","etw beachten notice of the"]],
+  167: [["workplace safety","Sicherheit am Arbeitsplatz"],["case study","Fallstudie"],["industrial accident [ɪnˌdʌstriəl","an industrial"],["printing works","Druckerei"],["ink","Druckfarbe"],["roller","Walze"],["printing press","Druckmaschine"],["print run","Auflage"],["to afford sth","sich etw leisten"],["cloth","piece of fabric for Lappen, Tuch"],["to shut down","abschalten"],["procedure","Vorgang"],["to get stuck","hängen bleiben, sich"],["to pull","ziehen"],["to let go (of sth)","(etw) loslassen"],["wedding ring","Ehering"]],
+  168: [["obesity","Fettleibigkeit"],["obese","fettleibig"],["sb has a hard time","jdm fällt es schwer, etw zu tun"],["childcare center AE","Kindertagesstätte"],["to be qualified","eine Ausbildung haben, einen Abschluss haben"],["ethnicity","ethnische Zugehörigkeit"],["to hire sb","jdn einstellen"],["to underestimate","unterschätzen"],["to fail to do sth","nicht"],["level","Niveau"],["range","Bereich"],["flight of steps","Treppe"],["individual","(selbständige) Persönlichkeit, Individuum"],["protection","Schutz"],["to find","befinden, festellen"],["court of justice","Gerichtshof"],["to fire sb","jdn entlassen, jdn feuern"],["clinic","Klinik"],["compensation","sth (usually money) Abfindung"],["counsellor","Berater/in"]],
+  169: [["to take sth into","etw berücksichtigen, etw beachten"],["to perform sth","etw (Tätigkeit usw.) ausführen, etw durchführen"],["to challenge sth","etw infrage stellen"]],
+  171: [["horizon","Horizont"],["to look ahead","nach vorne schauen"],["to be in charge","to be"]],
+  172: [["(registered)","(examinierte/r) Krankenpfleger/ -schwester"],["motor mechanic","sb who repairs cars Automechaniker/in"],["currently","zur Zeit, momentan"],["to tour","(Land usw.) bereisen"],["to convert","umbauen"],["to jam","to casually play an eine Jamsession machen, jammen"],["enjoyment","Vergnügen"],["sb is/gets","family photos"],["off piste","abseits der Piste"],["ski instructor","Skilehrer/in"],["diverse","vielfältig"],["permanent(ly)","dauerhaft"],["engine","Motor"],["pregnant","schwanger"],["healthcare","Gesundheitswesen"],["incredible","unglaublich"]],
+  173: [["globetrotting","weltreisend"],["archive","Archiv"],["whenever","immer wenn, wann immer"],["while","solange"],["on the road","unterwegs"],["nursing","Krankenpflege"],["to busk","to perform music on Straßenmusik machen"],["to sing along","to sing with others mitsingen"],["up close","aus nächster Nähe"],["truly","wirklich, echt"],["to cry","weinen"],["to rob sb","jdn bestehlen"],["robber","Räuber/in"],["to shake","zittern"],["inequality","Ungleichheit"],["crime","Verbrechen, Kriminalität"],["to check sth out","sich etw ansehen"],["to increase","zunehmen, sich steigern"],["That’s for sure.","Na klar! So viel steht fest."],["eccentric","exzentrisch"],["harsh","rau"],["border","Grenze"],["bloody","blutig"],["to head east","gen Osten aufbrechen"]],
+  174: [["motor","Auto, Motor"],["farm machinery","Landmaschinen"],["to set off","losfahren"],["freedom","Freiheit"],["to widen","erweitern"],["to start a","eine Familie gründen children"],["health insurance","Krankenversicherung"],["snake","a long thin reptile Schlange"],["shark","Hai"],["mechanical","technisches Versagen, Motorschaden"],["to break down","eine Panne haben"],["It’s just as","Da ist es gut, dass … ðət]"]],
+  176: [["pod","Gondel, Kapsel"],["proxy","Stellvertreter/in"],["services pl","Dienstleistungen"],["robot","Roboter"],["wage","Lohn"],["credit","Guthabenpunkt"],["His heart missed [hɪz ˌhɑːt mɪst ə","Dies ließ sein Herz höher schlagen."],["universal","allgemein, universell"],["to take up","(Platz, Raum) einnehmen"],["to reply","antworten, entgegnen"],["trial period","Probezeit"],["permanent","unbefristet"],["full-time","Vollzeit-"],["resident","Bewohner, Einwohner"],["skyscraper","Wolkenkratzer"],["storey","Stockwerk"],["talkative","gesprächig"],["induction","Einarbeitung"]],
+  177: [["to step out of","aus etw steigen, aus etw treten"],["cheerful","fröhlich"],["to zoom off","davonsausen"],["identical (to","identisch (mit jdm/etw)"],["robotic","Roboter-"],["to lose sight of","to forget about"],["to adjust","einstellen, justieren"],["sth is a","the shoes are a"],["breeze","Brise, (leichter) Wind"],["eager(ly)","eifrig, ungeduldig"],["unlike sth","anders als etw"],["protective","schützend, Schutz-"],["dome","spherical roof of"],["home town","the town"],["rooftop garden","Dachgarten"],["to pass sb","jdn überholen, an jdm vorbeigehen"],["translator","Übersetzer/in"],["to pick sth out","etw aussuchen, etw auswählen"],["server","Servierer/in"],["to beat","schlagen, pochen"],["contented(ly)","zufrieden, wunschlos glücklich"],["paper plate","Pappteller"],["fork","Gabel"],["gardening tool","Gartengerät"],["gardener","Gärtner/in"],["grass","Gras"],["to walk by","vorbeilaufen, vorübergehen"],["thrill","Nervenkitzel, Kick"],["to blink","to close one’s eyes blinzeln, zwinkern"],["middle-aged","mittleren Alters"],["authentic","echt, authentisch"]],
+  178: [["amazed","erstaunt, verblüfft"],["to entail sth","etw mit sich bringen"],["densely","dicht besiedelt Mumbai is very"],["to industrialize","industrialisieren"],["to retain sth","etw behalten"],["wolf, wolves","Wolf, Wölfe"],["isolated","alone, not close"],["to implant","einpflanzen"]],
+  179: [["news agency","Nachrichtenagentur"]],
+  180: [["department store","Kaufhaus"],["cosmetics pl","Kosmetik"],["food hall","department for food Lebensmittelabteilung"],["ladies’ wear","Damenbekleidung"],["menswear","Herrenbekleidung"],["sketch","Skizze"],["shop floor","Verkaufsfläche"],["shop assistant","Verkäufer/in"],["to put sth aside","etw zurücklegen"],["sth in","etw Spezielles"],["change","Wechselgeld"],["to exchange","umtauschen"]],
+  181: [["retail","Einzelhandel"],["post code","Postleitzahl"],["postage","Porto, Versandkosten"],["total sum","Gesamtbetrag"],["delivery","Lieferung, Zustellung"],["expiry date","Ablaufdatum"],["to update","auf den neuesten Stand bringen"],["to amount to sth","(Kosten:) sich auf etw belaufen"]],
+  182: [["sailing ship","Segelschiff"],["sail","Segel"],["to maintain sth","etw instand halten, etw"],["to operate sth","etw betreiben"],["computerized","computergesteuert"],["crew","staff that works on Mannschaft"],["to sail","to travel"],["watch","Wache, Wachmannschaft"],["sailor","person who works on Matrose/-in, Segler/in"]],
+  184: [["mugging","Raubüberfall (auf der Straße)"],["glacier","Gletscher"],["piste","Skipiste"],["to obey sth","etw befolgen"],["board of","group of leaders of Vorstand, Geschäftsführung"],["administrator","Verwalter/in"],["to win the","im Lotto gewinnen lottery, I’ll buy"],["road trip","Autoreise"],["thief, thieves","Dieb, Diebe"],["criminal","her as she had a"]],
+};
+
+const UNITS = [
+  {name:"Getting started", from:6,  to:14,  desc:"Classroom language & basics"},
+  {name:"Unit 1",          from:15, to:24,  desc:"Food, jobs & daily life"},
+  {name:"Unit 2",          from:25, to:34,  desc:"Sport & healthy living"},
+  {name:"Unit 3",          from:35, to:46,  desc:"Role models & intercultural comm."},
+  {name:"Unit 4",          from:47, to:56,  desc:"Friends & free time"},
+  {name:"Unit 5",          from:57, to:68,  desc:"Health & the body"},
+  {name:"Unit 6",          from:69, to:80,  desc:"Work & future plans"},
+  {name:"Unit 7",          from:81, to:92,  desc:"Media & communication"},
+  {name:"Unit 8",          from:93, to:104, desc:"Global issues & culture"},
+  {name:"Unit 9",          from:105,to:118, desc:"Society & community"},
+  {name:"Unit 10",         from:119,to:130, desc:"Science & technology"},
+  {name:"Unit 11",         from:131,to:144, desc:"Environment & sustainability"},
+  {name:"Unit 12",         from:145,to:156, desc:"Travel & cultures"},
+  {name:"Unit 13",         from:157,to:169, desc:"Art, music & literature"},
+  {name:"Unit 14",         from:171,to:184, desc:"Rights, justice & ethics"},
+  {name:"Custom range",   from:null,to:null,desc:"Set any page range below"},
+];
+
+let activeFrom=35, activeTo=46, activeDeck=[], dir='en-de', lastMode='mcq';
+let current=0, score=0, wrong=[];
+let matchSelected=null, matchPairs=[], matchDone=0;
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function shuffle(a){let b=[...a];for(let i=b.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b;}
+function setProgress(id,n,t){document.getElementById(id).style.width=Math.round((n/t)*100)+'%';}
+function dirLabel(){return dir==='en-de'?'English → German':'Deutsch → Englisch';}
+function q(i){return dir==='en-de'?activeDeck[i][0]:activeDeck[i][1];}
+function a(i){return dir==='en-de'?activeDeck[i][1]:activeDeck[i][0];}
+function norm(s){return s.toLowerCase().replace(/[^a-z0-9äöüß\s]/g,'').trim();}
+
+function getWords(from,to){
+  let w=[];
+  for(let p=from;p<=to;p++){if(VOCAB_BY_PAGE[p])w=w.concat(VOCAB_BY_PAGE[p]);}
+  return w;
+}
+function countWords(from,to){
+  let n=0;
+  for(let p=from;p<=to;p++){if(VOCAB_BY_PAGE[p])n+=VOCAB_BY_PAGE[p].length;}
+  return n;
+}
+
+// ── Selection screen ─────────────────────────────────────────────
+function buildSelection(){
+  const list=document.getElementById('unit-list');
+  list.innerHTML='';
+  UNITS.forEach((u,idx)=>{
+    const n=u.from?countWords(u.from,u.to):'—';
+    const card=document.createElement('div');
+    card.className='unit-card';
+    card.innerHTML=`<div><div class="unit-name">${u.name}</div><div class="unit-meta">${u.desc}${u.from?' &nbsp;·&nbsp; pp.'+u.from+'–'+u.to:''}</div></div><span class="unit-count">${n} words</span>`;
+    card.onclick=()=>selectUnit(idx);
+    list.appendChild(card);
+  });
+  buildBubbles();
+  updateCount();
+
+  const fi=document.getElementById('range-from');
+  const ti=document.getElementById('range-to');
+  fi.oninput=()=>{
+    activeFrom=Math.max(6,Math.min(184,parseInt(fi.value)||6));
+    if(activeFrom>activeTo){activeTo=activeFrom;ti.value=activeTo;}
+    fi.value=activeFrom;
+    deselectUnits(); selectCustom(); buildBubbles(); updateCount();
+  };
+  ti.oninput=()=>{
+    activeTo=Math.max(6,Math.min(184,parseInt(ti.value)||6));
+    if(activeTo<activeFrom){activeFrom=activeTo;fi.value=activeFrom;}
+    ti.value=activeTo;
+    deselectUnits(); selectCustom(); buildBubbles(); updateCount();
+  };
+
+  // Default: Unit 3
+  selectUnit(3);
+}
+
+function deselectUnits(){document.querySelectorAll('.unit-card').forEach(c=>c.classList.remove('selected'));}
+function selectCustom(){document.querySelectorAll('.unit-card')[UNITS.length-1].classList.add('selected');}
+
+function selectUnit(idx){
+  deselectUnits();
+  document.querySelectorAll('.unit-card')[idx].classList.add('selected');
+  const u=UNITS[idx];
+  if(u.from){
+    activeFrom=u.from; activeTo=u.to;
+    document.getElementById('range-from').value=activeFrom;
+    document.getElementById('range-to').value=activeTo;
+  }
+  buildBubbles(); updateCount();
+}
+
+function buildBubbles(){
+  const container=document.getElementById('page-bubbles');
+  container.innerHTML='';
+  const allPages=Object.keys(VOCAB_BY_PAGE).map(Number).sort((a,b)=>a-b);
+  allPages.forEach(p=>{
+    const bub=document.createElement('div');
+    const inRange=p>=activeFrom&&p<=activeTo;
+    const isEdge=p===activeFrom||p===activeTo;
+    bub.className='pb'+(isEdge?' range-start':inRange?' in-range':'');
+    bub.textContent=p;
+    bub.title='Page '+p+': '+(VOCAB_BY_PAGE[p]||[]).length+' words';
+    bub.onclick=()=>{
+      if(!bub._drag){
+        // Single click: set start of range
+        activeFrom=p;
+        if(p>activeTo)activeTo=p;
+        document.getElementById('range-from').value=activeFrom;
+        document.getElementById('range-to').value=activeTo;
+        deselectUnits(); selectCustom(); buildBubbles(); updateCount();
+      }
+    };
+    // Right-click / long-press: set end
+    bub.oncontextmenu=(e)=>{
+      e.preventDefault();
+      activeTo=p;
+      if(p<activeFrom)activeFrom=p;
+      document.getElementById('range-from').value=activeFrom;
+      document.getElementById('range-to').value=activeTo;
+      deselectUnits(); selectCustom(); buildBubbles(); updateCount();
+    };
+    container.appendChild(bub);
+  });
+}
+
+function updateCount(){
+  const n=countWords(activeFrom,activeTo);
+  document.getElementById('range-count').textContent=n+' words';
+  document.getElementById('start-btn').disabled=n<4;
+}
+
+function goToModes(){
+  const words=getWords(activeFrom,activeTo);
+  if(words.length<4){alert('Not enough words in this range (need at least 4).');return;}
+  activeDeck=shuffle(words);
+  document.getElementById('mode-sub').textContent=activeDeck.length+' words · pages '+activeFrom+'–'+activeTo;
+  show('mode-screen');
+}
+
+// ── Modes ────────────────────────────────────────────────────────
+function startMode(m){
+  lastMode=m; current=0; score=0; wrong=[];
+  const sel=document.getElementById('dir-select').value;
+  dir=sel==='random'?(Math.random()<.5?'en-de':'de-en'):sel;
+  activeDeck=shuffle(activeDeck);
+  if(m==='mcq')renderMCQ();
+  else if(m==='flashcard')renderFC();
+  else if(m==='match')renderMatch();
+  else if(m==='type')renderType();
+}
+function retryMode(){startMode(lastMode);}
+
+// MCQ
+function renderMCQ(){
+  show('mcq-screen');
+  document.getElementById('mcq-dir').textContent=dirLabel();
+  document.getElementById('mcq-word').textContent=q(current);
+  document.getElementById('mcq-label').textContent='Q '+(current+1)+' / '+activeDeck.length;
+  document.getElementById('mcq-score').textContent='Score: '+score;
+  setProgress('mcq-progress',current,activeDeck.length);
+  const correct=a(current);
+  const distractors=shuffle(activeDeck.filter((_,i)=>i!==current).map(w=>dir==='en-de'?w[1]:w[0]).filter(v=>v!==correct)).slice(0,3);
+  const opts=shuffle([correct,...distractors]);
+  const grid=document.getElementById('mcq-options');
+  grid.innerHTML='';
+  opts.forEach(opt=>{
+    const b=document.createElement('button');
+    b.className='opt';b.textContent=opt;
+    b.onclick=()=>mcqPick(b,opt===correct,correct);
+    grid.appendChild(b);
+  });
+}
+function mcqPick(btn,isCorrect,correct){
+  document.querySelectorAll('.opt').forEach(b=>b.setAttribute('disabled','true'));
+  if(isCorrect){btn.classList.add('correct');score++;}
+  else{btn.classList.add('wrong');wrong.push({q:q(current),a:correct});document.querySelectorAll('.opt').forEach(b=>{if(b.textContent===correct)b.classList.add('reveal');});}
+  setTimeout(()=>{current++;current>=activeDeck.length?showResult(score,activeDeck.length):renderMCQ();},900);
+}
+
+// Flashcard
+function renderFC(){
+  show('flashcard-screen');
+  document.getElementById('fc-translation').style.display='none';
+  document.getElementById('fc-reveal-btn').style.display='block';
+  document.getElementById('fc-rate-btns').style.display='none';
+  document.getElementById('fc-dir').textContent=dirLabel();
+  document.getElementById('fc-word').textContent=q(current);
+  document.getElementById('fc-label').textContent='Card '+(current+1)+' of '+activeDeck.length;
+  document.getElementById('fc-score').textContent='Got it: '+score;
+  setProgress('fc-progress',current,activeDeck.length);
+}
+function fcReveal(){
+  document.getElementById('fc-translation').textContent=a(current);
+  document.getElementById('fc-translation').style.display='block';
+  document.getElementById('fc-reveal-btn').style.display='none';
+  document.getElementById('fc-rate-btns').style.display='flex';
+}
+function fcRate(knew){
+  if(knew)score++;else wrong.push({q:q(current),a:a(current)});
+  current++;current>=activeDeck.length?showResult(score,activeDeck.length):renderFC();
+}
+
+// Match
+function renderMatch(){
+  show('match-screen');
+  matchSelected=null;matchPairs=[];matchDone=0;
+  const pool=shuffle(activeDeck).slice(0,6);
+  matchPairs=pool.map(w=>({en:w[0],de:w[1],id:w[0]}));
+  const left=shuffle(matchPairs),right=shuffle(matchPairs);
+  document.getElementById('match-score').textContent='0 / '+matchPairs.length+' matched';
+  setProgress('match-progress',0,matchPairs.length);
+  const lCol=document.getElementById('match-left');
+  const rCol=document.getElementById('match-right');
+  lCol.innerHTML='';rCol.innerHTML='';
+  left.forEach(p=>{
+    const d=document.createElement('div');d.className='match-item';
+    d.textContent=dir==='en-de'?p.en:p.de;
+    d.dataset.id=p.id;d.dataset.side='left';
+    d.onclick=()=>matchClick(d);lCol.appendChild(d);
+  });
+  right.forEach(p=>{
+    const d=document.createElement('div');d.className='match-item';
+    d.textContent=dir==='en-de'?p.de:p.en;
+    d.dataset.id=p.id;d.dataset.side='right';
+    d.onclick=()=>matchClick(d);rCol.appendChild(d);
+  });
+}
+function matchClick(el){
+  if(el.classList.contains('matched'))return;
+  if(!matchSelected){matchSelected=el;el.classList.add('selected');}
+  else{
+    if(matchSelected===el){el.classList.remove('selected');matchSelected=null;return;}
+    if(matchSelected.dataset.side===el.dataset.side){matchSelected.classList.remove('selected');matchSelected=el;el.classList.add('selected');return;}
+    const old=matchSelected;matchSelected=null;old.classList.remove('selected');
+    if(old.dataset.id===el.dataset.id){
+      [old,el].forEach(d=>{d.classList.remove('selected');d.classList.add('matched');});
+      matchDone++;
+      document.getElementById('match-score').textContent=matchDone+' / '+matchPairs.length+' matched';
+      setProgress('match-progress',matchDone,matchPairs.length);
+      if(matchDone>=matchPairs.length)setTimeout(()=>showResult(matchPairs.length,matchPairs.length),400);
+    } else {
+      wrong.push({q:old.textContent,a:matchPairs.find(p=>p.id===old.dataset.id)?.[dir==='en-de'?'de':'en']||''});
+      [old,el].forEach(d=>d.classList.add('wrong-flash'));
+      setTimeout(()=>[old,el].forEach(d=>d.classList.remove('wrong-flash')),600);
+    }
+  }
+}
+
+// Type
+function renderType(){
+  show('type-screen');
+  document.getElementById('type-dir').textContent=dirLabel();
+  document.getElementById('type-word').textContent=q(current);
+  document.getElementById('type-label').textContent='Q '+(current+1)+' / '+activeDeck.length;
+  document.getElementById('type-score').textContent='Score: '+score;
+  document.getElementById('type-feedback').textContent='';
+  document.getElementById('type-feedback').style.color='';
+  document.getElementById('type-input').value='';
+  setProgress('type-progress',current,activeDeck.length);
+  setTimeout(()=>document.getElementById('type-input').focus(),50);
+  document.getElementById('type-input').onkeydown=e=>{if(e.key==='Enter')typeCheck();};
+}
+function typeCheck(){
+  const val=document.getElementById('type-input').value;
+  if(!val.trim())return;
+  const ans=a(current);
+  const parts=ans.split(/[,\/]/).map(s=>s.trim());
+  const ok=parts.some(p=>norm(val)===norm(p))||norm(val)===norm(ans);
+  const fb=document.getElementById('type-feedback');
+  if(ok){fb.textContent='Correct!';fb.style.color='#1a6b3a';score++;setTimeout(()=>{current++;current>=activeDeck.length?showResult(score,activeDeck.length):renderType();},650);}
+  else{fb.textContent='Answer: '+ans;fb.style.color='#a32d2d';wrong.push({q:q(current),a:ans});setTimeout(()=>{current++;current>=activeDeck.length?showResult(score,activeDeck.length):renderType();},1400);}
+}
+function typeSkip(){wrong.push({q:q(current),a:a(current)});current++;current>=activeDeck.length?showResult(score,activeDeck.length):renderType();}
+
+// Results
+function showResult(s,t){
+  show('result-screen');
+  const pct=Math.round((s/t)*100);
+  document.getElementById('result-pct').textContent=pct+'%';
+  const title=pct===100?'Perfect!':pct>=80?'Great work!':pct>=60?'Good effort!':'Keep practising!';
+  document.getElementById('result-title').textContent=title;
+  document.getElementById('result-sub').textContent=s+' / '+t+' correct · '+dirLabel();
+  const wd=document.getElementById('result-wrong');
+  if(wrong.length){
+    const uniq=[...new Map(wrong.map(w=>[w.q,w])).values()];
+    wd.innerHTML='<div style="font-size:13px;font-weight:500;color:#6b6860;margin-bottom:8px">Review these:</div>'+
+      uniq.map(w=>'<div class="summary-row"><span style="flex:1">'+w.q+'</span><span style="flex:1;text-align:right;color:#6b6860">'+w.a+'</span></div>').join('');
+  }else{wd.innerHTML='';}
+}
+
+buildSelection();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
+</body>
+</html>
