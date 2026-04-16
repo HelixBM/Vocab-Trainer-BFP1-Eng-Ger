@@ -88,6 +88,9 @@ h2{font-size:18px;font-weight:500;color:#1a1a18;margin-bottom:.25rem}
 .opt.reveal{background:#e8f7ee;color:#1a6b3a;border-color:#9dd4b4;opacity:.55}
 .opt[disabled]{cursor:default;pointer-events:none}
 
+/* ── flashcard ── */
+.fc-answer{text-align:center;font-size:16px;color:#6b6860;margin-bottom:1.5rem;line-height:1.6;padding:1rem;border-radius:8px;background:#f0ede8}
+
 /* ── match ── */
 .match-col{display:flex;flex-direction:column;gap:8px}
 .match-item{padding:10px 12px;border-radius:8px;border:0.5px solid #c8c4be;background:#fff;color:#1a1a18;font-size:13px;cursor:pointer;transition:all .15s;min-height:42px;display:flex;align-items:center;line-height:1.3}
@@ -160,6 +163,10 @@ h2{font-size:18px;font-weight:500;color:#1a1a18;margin-bottom:.25rem}
       <div class="mode-title">Multiple choice</div>
       <div class="mode-desc">Pick correct translation</div>
     </div>
+    <div class="mode-card" onclick="startMode('flashcard')">
+      <div class="mode-title">Flashcards</div>
+      <div class="mode-desc">Reveal translation, rate yourself</div>
+    </div>
     <div class="mode-card" onclick="startMode('match')">
       <div class="mode-title">Match pairs</div>
       <div class="mode-desc">Connect 6 pairs at a time</div>
@@ -197,6 +204,22 @@ h2{font-size:18px;font-weight:500;color:#1a1a18;margin-bottom:.25rem}
   <div class="pill" id="mcq-dir" style="margin-bottom:1rem"></div>
   <div class="word-card" id="mcq-word"></div>
   <div class="options-grid" id="mcq-options"></div>
+  <button class="btn btn-sm" onclick="quitMode()" style="display:block;margin:0 auto">Quit</button>
+</div>
+
+<div id="flashcard-screen" class="screen">
+  <div class="score-row"><span id="fc-label"></span><span id="fc-score"></span></div>
+  <div class="progress-bar"><div class="progress-fill" id="fc-progress"></div></div>
+  <div class="pill" id="fc-dir" style="margin-bottom:1rem"></div>
+  <div class="word-card" id="fc-word"></div>
+  <div class="fc-answer" id="fc-translation" style="display:none"></div>
+  <div id="fc-reveal-btn" style="text-align:center;margin-bottom:1rem">
+    <button class="btn btn-accent" onclick="fcReveal()">Show translation</button>
+  </div>
+  <div id="fc-rate-btns" style="display:none;gap:10px;justify-content:center;margin-bottom:1.5rem">
+    <button class="btn" style="border-color:#f0a0a0;color:#a32d2d" onclick="fcRate(false)">Didn't know it</button>
+    <button class="btn" style="border-color:#9dd4b4;color:#1a6b3a" onclick="fcRate(true)">Got it</button>
+  </div>
   <button class="btn btn-sm" onclick="quitMode()" style="display:block;margin:0 auto">Quit</button>
 </div>
 
@@ -366,7 +389,7 @@ function handleAnswerEvaluation(qText, aText, isCorrect){
 
 function renderWeakAlert(){
   const c = document.getElementById('weak-alert-container');
-  if(weakWords.length >= 5){
+  if(weakWords.length >= 1){ // Threshold lowered to 1
     c.innerHTML = `<div class="weak-word-alert" onclick="startWeakMode()">
       <span>⚠️ You have ${weakWords.length} weak words to review.</span>
       <strong>Practice →</strong>
@@ -515,6 +538,7 @@ function startMode(m){
   }
 
   if(m==='mcq' || m==='timeattack') renderMCQ(m==='timeattack');
+  else if(m==='flashcard') renderFC(); // Flashcards restored!
   else if(m==='match') renderMatch();
   else if(m==='type' || m==='dictation') renderType(m==='dictation');
 }
@@ -548,6 +572,35 @@ function playCurrentWord() {
   
   utterance.rate = 0.9; // Slightly slower for dictation
   speechSynthesis.speak(utterance);
+}
+
+// ── Flashcard ──
+function renderFC(){
+  show('flashcard-screen');
+  document.getElementById('fc-translation').style.display='none';
+  document.getElementById('fc-reveal-btn').style.display='block';
+  document.getElementById('fc-rate-btns').style.display='none';
+  document.getElementById('fc-dir').textContent=dirLabel();
+  document.getElementById('fc-word').textContent=q(current);
+  document.getElementById('fc-label').textContent='Card '+(current+1)+' of '+activeDeck.length;
+  document.getElementById('fc-score').textContent='Got it: '+score;
+  setProgress('fc-progress',current,activeDeck.length);
+}
+function fcReveal(){
+  document.getElementById('fc-translation').textContent=a(current);
+  document.getElementById('fc-translation').style.display='block';
+  document.getElementById('fc-reveal-btn').style.display='none';
+  document.getElementById('fc-rate-btns').style.display='flex';
+}
+function fcRate(knew){
+  // Feeds into Spaced Repetition engine
+  handleAnswerEvaluation(q(current), a(current), knew);
+  
+  if(knew) { score++; } 
+  else { wrong.push({q:q(current),a:a(current)}); }
+  
+  current++;
+  current>=activeDeck.length ? showResult(score,activeDeck.length) : renderFC();
 }
 
 // ── MCQ & Time Attack ──
