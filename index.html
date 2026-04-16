@@ -26,9 +26,18 @@ h2{font-size:18px;font-weight:500;color:#1a1a18;margin-bottom:.25rem}
 .progress-bar{height:5px;background:#e8e4de;border-radius:4px;overflow:hidden;margin-bottom:1.5rem}
 .progress-fill{height:100%;background:#1a56b0;border-radius:4px;transition:width .35s}
 .score-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#6b6860;margin-bottom:.75rem}
-.word-card{background:#f0ede8;border:0.5px solid #ddd8d0;border-radius:12px;padding:1.5rem;text-align:center;font-size:21px;font-weight:500;color:#1a1a18;margin-bottom:1.5rem;min-height:76px;display:flex;align-items:center;justify-content:center;line-height:1.3}
+.word-card{background:#f0ede8;border:0.5px solid #ddd8d0;border-radius:12px;padding:1.5rem;text-align:center;font-size:21px;font-weight:500;color:#1a1a18;margin-bottom:1.5rem;min-height:76px;display:flex;align-items:center;justify-content:center;line-height:1.3; position:relative;}
 .back-link{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#6b6860;cursor:pointer;margin-bottom:1.25rem;background:none;border:none;font-family:inherit;padding:0}
 .back-link:hover{color:#1a1a18}
+
+/* ── Gamification Header ── */
+.gamification-bar { display:flex; justify-content:space-between; align-items:center; background:#fff; padding:12px; border-radius:12px; border:0.5px solid #ddd8d0; margin-bottom:1.5rem; }
+.stat-group { display:flex; align-items:center; gap:8px; }
+.level-badge { background:#1a56b0; color:#fff; font-weight:bold; padding:4px 8px; border-radius:8px; font-size:12px; }
+.xp-text { font-size:13px; font-weight:500; color:#6b6860; }
+.streak-fire { font-size:16px; color:#e05b22; }
+.badge-icon { cursor:pointer; font-size:20px; transition:transform 0.1s;}
+.badge-icon:active { transform:scale(0.9); }
 
 /* ── selection ── */
 .unit-list{display:flex;flex-direction:column;gap:7px;margin-bottom:1.25rem}
@@ -88,13 +97,36 @@ h2{font-size:18px;font-weight:500;color:#1a1a18;margin-bottom:.25rem}
 .type-input:focus{outline:none;border-color:#1a56b0}
 .feedback{font-size:14px;min-height:20px;margin-bottom:1rem;font-weight:500}
 
+/* ── Badges Screen ── */
+.badge-grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom: 2rem;}
+.badge-item { background: #fff; border: 0.5px solid #ddd8d0; padding: 15px; border-radius: 10px; text-align:center; opacity: 0.4; filter: grayscale(100%); transition:all 0.3s;}
+.badge-item.unlocked { opacity: 1; filter: grayscale(0%); border-color: #b8cff0; background: #e8f0fb;}
+.badge-emoji { font-size: 32px; margin-bottom: 8px; }
+.badge-title { font-size: 13px; font-weight: bold; color: #1a1a18; }
+.badge-desc { font-size: 11px; color: #6b6860; margin-top:4px;}
+
 /* ── results ── */
 .summary-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:0.5px solid #e8e4de;font-size:13px}
 .badge-pct{font-size:44px;font-weight:500;text-align:center;margin:.75rem 0;color:#1a1a18}
+
+/* ── Timer ── */
+.timer-huge { font-size: 40px; font-weight: bold; color: #1a56b0; text-align: center; margin-bottom: 1rem; font-variant-numeric: tabular-nums; }
+.timer-low { color: #a32d2d; }
 </style>
 </head>
 <body>
 <div class="wrap">
+
+<div class="gamification-bar" id="game-header">
+  <div class="stat-group">
+    <div class="level-badge" id="ui-level">Lvl 1</div>
+    <div class="xp-text" id="ui-xp">0 XP</div>
+  </div>
+  <div class="stat-group">
+    <div class="xp-text"><span class="streak-fire">🔥</span> <span id="ui-streak">0</span> Days</div>
+    <div class="badge-icon" onclick="show('badges-screen')" title="View Badges">🏆</div>
+  </div>
+</div>
 
 <div id="select-screen" class="screen active">
   <h2>Vocab Trainer</h2>
@@ -114,10 +146,29 @@ h2{font-size:18px;font-weight:500;color:#1a1a18;margin-bottom:.25rem}
   <button class="btn btn-accent" id="start-btn" onclick="goToModes()" style="width:100%;padding:12px">Continue →</button>
 </div>
 
+<div id="badges-screen" class="screen">
+  <button class="back-link" onclick="show('select-screen')">← Back</button>
+  <h2>Your Trophies</h2>
+  <p class="sub">Complete challenges to unlock badges.</p>
+  <div class="badge-grid" id="badge-container">
+    </div>
+</div>
+
 <div id="mode-screen" class="screen">
   <button class="back-link" onclick="show('select-screen')">← Change selection</button>
   <h2>Choose a mode</h2>
   <p class="sub" id="mode-sub"></p>
+  
+  <div style="display:flex;gap:8px;flex-wrap:wrap; margin-bottom:1.5rem">
+    <div style="flex:1;min-width:140px">
+      <select id="dir-select" style="width:100%;padding:8px 10px;border-radius:8px;border:0.5px solid #c8c4be;background:#fff;font-size:13px;font-family:inherit;color:#1a1a18">
+        <option value="random">Random direction</option>
+        <option value="en-de">English → German</option>
+        <option value="de-en">Deutsch → Englisch</option>
+      </select>
+    </div>
+  </div>
+
   <div class="mode-grid">
     <div class="mode-card" onclick="startMode('mcq')">
       <div class="mode-title">Multiple choice</div>
@@ -129,25 +180,28 @@ h2{font-size:18px;font-weight:500;color:#1a1a18;margin-bottom:.25rem}
     </div>
     <div class="mode-card" onclick="startMode('match')">
       <div class="mode-title">Match pairs</div>
-      <div class="mode-desc">Connect word to translation (6 at a time)</div>
+      <div class="mode-desc">Connect word to translation</div>
     </div>
     <div class="mode-card" onclick="startMode('type')">
       <div class="mode-title">Type it</div>
       <div class="mode-desc">Type the translation from memory</div>
     </div>
-    <div class="mode-card" onclick="showTestCreator()">
-      <div class="mode-title">Create a Test</div>
-      <div class="mode-desc">Generate a randomized, printable worksheet</div>
+    
+    <div class="mode-card" onclick="startMode('timeattack')" style="background:#fffcf0; border-color:#e6c35c;">
+      <div class="mode-title">⏱️ Time Attack</div>
+      <div class="mode-desc">Answer as many as you can in 60s</div>
     </div>
-  </div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <div style="flex:1;min-width:140px">
-      <div style="font-size:12px;color:#6b6860;margin-bottom:6px">Direction</div>
-      <select id="dir-select" style="width:100%;padding:8px 10px;border-radius:8px;border:0.5px solid #c8c4be;background:#fff;font-size:13px;font-family:inherit;color:#1a1a18">
-        <option value="random">Random direction</option>
-        <option value="en-de">English → German</option>
-        <option value="de-en">Deutsch → Englisch</option>
-      </select>
+    <div class="mode-card" onclick="startMode('dictation')" style="background:#f4f0ff; border-color:#d0bcf0;">
+      <div class="mode-title">🎧 Dictation</div>
+      <div class="mode-desc">Listen and type the word</div>
+    </div>
+    <div class="mode-card" onclick="startMode('weak')" id="weak-btn" style="background:#fff0f0; border-color:#f0a0a0;">
+      <div class="mode-title">💔 Weak Words</div>
+      <div class="mode-desc">Review your past mistakes</div>
+    </div>
+    <div class="mode-card" onclick="showTestCreator()">
+      <div class="mode-title">📄 Create a Test</div>
+      <div class="mode-desc">Printable random worksheet</div>
     </div>
   </div>
 </div>
@@ -158,6 +212,31 @@ h2{font-size:18px;font-weight:500;color:#1a1a18;margin-bottom:.25rem}
   <div class="pill" id="mcq-dir" style="margin-bottom:1rem"></div>
   <div class="word-card" id="mcq-word"></div>
   <div class="options-grid" id="mcq-options"></div>
+  <button class="btn btn-sm" onclick="show('mode-screen')" style="display:block;margin:0 auto">All modes</button>
+</div>
+
+<div id="timeattack-screen" class="screen">
+  <div class="timer-huge" id="ta-timer">60</div>
+  <div class="score-row"><span>Time Attack</span><span id="ta-score">Score: 0</span></div>
+  <div class="word-card" id="ta-word"></div>
+  <div class="options-grid" id="ta-options"></div>
+  <button class="btn btn-sm" onclick="stopTimeAttack(); show('mode-screen')" style="display:block;margin:0 auto">Quit</button>
+</div>
+
+<div id="dictation-screen" class="screen">
+  <div class="score-row"><span id="dict-label"></span><span id="dict-score"></span></div>
+  <div class="progress-bar"><div class="progress-fill" id="dict-progress"></div></div>
+  <div class="pill" id="dict-dir" style="margin-bottom:1rem"></div>
+  <div class="word-card" style="cursor:pointer;" onclick="playDictationAudio()">
+     <span style="font-size: 32px;">🔊</span><br>
+     <span style="font-size: 12px; color:#6b6860; font-weight:normal;">Tap to hear word</span>
+  </div>
+  <input class="type-input" id="dict-input" placeholder="Type what you hear..." autocomplete="off" spellcheck="false">
+  <div class="feedback" id="dict-feedback"></div>
+  <div style="display:flex;gap:10px;margin-bottom:1.5rem">
+    <button class="btn btn-accent" onclick="dictCheck()" style="flex:1">Check</button>
+    <button class="btn" onclick="dictSkip()" style="color:#6b6860">Skip</button>
+  </div>
   <button class="btn btn-sm" onclick="show('mode-screen')" style="display:block;margin:0 auto">All modes</button>
 </div>
 
@@ -206,6 +285,7 @@ h2{font-size:18px;font-weight:500;color:#1a1a18;margin-bottom:.25rem}
     <div class="badge-pct" id="result-pct"></div>
     <div style="font-size:18px;font-weight:500;margin-bottom:.25rem" id="result-title"></div>
     <div style="font-size:13px;color:#6b6860" id="result-sub"></div>
+    <div style="font-size:14px;font-weight:bold;color:#1a56b0;margin-top:10px;" id="result-xp"></div>
   </div>
   <div id="result-wrong" style="margin:1.5rem 0"></div>
   <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
@@ -219,21 +299,17 @@ h2{font-size:18px;font-weight:500;color:#1a1a18;margin-bottom:.25rem}
   <button class="back-link" onclick="show('mode-screen')">← Back to modes</button>
   <h2>Test Creator</h2>
   <p class="sub">Generate a printable test from your selected vocabulary.</p>
-  
   <div class="range-box">
     <div class="range-row">
       <span class="range-label">Questions:</span>
       <input class="range-input" id="test-q-count" type="number" min="5" max="100" value="20" style="width:80px;">
     </div>
   </div>
-  
   <div style="display:flex; gap:10px; margin-bottom:1.5rem">
     <button class="btn btn-accent" onclick="generateTest(false)" style="flex:1">Generate Test</button>
     <button class="btn" onclick="generateTest(true)" style="flex:1">Answer Key</button>
   </div>
-  
   <div id="test-output" style="background:#fff; border:0.5px solid #c8c4be; padding:20px; border-radius:8px; display:none; max-height:400px; overflow-y:auto; font-size:14px; text-align:left;"></div>
-  
   <button class="btn btn-accent" id="print-test-btn" onclick="printTest()" style="display:none; width:100%; margin-top:10px; padding:12px;">🖨️ Print Test</button>
 </div>
 
@@ -242,355 +318,50 @@ h2{font-size:18px;font-weight:500;color:#1a1a18;margin-bottom:.25rem}
 <script src="db.js"></script>
 
 <script>
-let activeFrom=35, activeTo=46, activeDeck=[], dir='en-de', lastMode='mcq';
-let current=0, score=0, wrong=[];
-let matchSelected=null, matchPairs=[], matchDone=0;
+// ── GAMIFICATION STATE & LOGIC ─────────────────────────────────────
+let userStats = JSON.parse(localStorage.getItem('bfp1_stats')) || {
+    xp: 0,
+    level: 1,
+    streak: 0,
+    lastDate: null,
+    weakWords: [], 
+    badges: []
+};
 
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
-function shuffle(a){let b=[...a];for(let i=b.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b;}
-function setProgress(id,n,t){document.getElementById(id).style.width=Math.round((n/t)*100)+'%';}
-function dirLabel(){return dir==='en-de'?'English → German':'Deutsch → Englisch';}
-function q(i){return dir==='en-de'?activeDeck[i][0]:activeDeck[i][1];}
-function a(i){return dir==='en-de'?activeDeck[i][1]:activeDeck[i][0];}
-function norm(s){return s.toLowerCase().replace(/[^a-z0-9äöüß\s]/g,'').trim();}
+const BADGES = [
+    {id: 'first_quiz', icon: '🐣', title: 'First Steps', desc: 'Complete your first quiz', req: (s) => s.xp > 0},
+    {id: 'level_5', icon: '⭐', title: 'Rising Star', desc: 'Reach Level 5', req: (s) => s.level >= 5},
+    {id: 'streak_3', icon: '🔥', title: 'On Fire', desc: 'Get a 3-day streak', req: (s) => s.streak >= 3},
+    {id: 'time_attack', icon: '⏱️', title: 'Speed Demon', desc: 'Score 15+ in Time Attack', req: () => false}, // Manual unlock
+    {id: 'flawless', icon: '👑', title: 'Flawless', desc: 'Get 100% on a standard mode', req: () => false} // Manual unlock
+];
 
-function getWords(from,to){
-  let w=[];
-  for(let p=from;p<=to;p++){if(VOCAB_BY_PAGE[p])w=w.concat(VOCAB_BY_PAGE[p]);}
-  return w;
-}
-function countWords(from,to){
-  let n=0;
-  for(let p=from;p<=to;p++){if(VOCAB_BY_PAGE[p])n+=VOCAB_BY_PAGE[p].length;}
-  return n;
-}
-
-// ── Selection screen ─────────────────────────────────────────────
-function buildSelection(){
-  const list=document.getElementById('unit-list');
-  list.innerHTML='';
-  UNITS.forEach((u,idx)=>{
-    const n=u.from?countWords(u.from,u.to):'—';
-    const card=document.createElement('div');
-    card.className='unit-card';
-    card.innerHTML=`<div><div class="unit-name">${u.name}</div><div class="unit-meta">${u.desc}${u.from?' &nbsp;·&nbsp; pp.'+u.from+'–'+u.to:''}</div></div><span class="unit-count">${n} words</span>`;
-    card.onclick=()=>selectUnit(idx);
-    list.appendChild(card);
-  });
-  buildBubbles();
-  updateCount();
-
-  const fi=document.getElementById('range-from');
-  const ti=document.getElementById('range-to');
-  fi.oninput=()=>{
-    activeFrom=Math.max(6,Math.min(184,parseInt(fi.value)||6));
-    if(activeFrom>activeTo){activeTo=activeFrom;ti.value=activeTo;}
-    fi.value=activeFrom;
-    deselectUnits(); selectCustom(); buildBubbles(); updateCount();
-  };
-  ti.oninput=()=>{
-    activeTo=Math.max(6,Math.min(184,parseInt(ti.value)||6));
-    if(activeTo<activeFrom){activeFrom=activeTo;fi.value=activeFrom;}
-    ti.value=activeTo;
-    deselectUnits(); selectCustom(); buildBubbles(); updateCount();
-  };
-
-  // Default: Unit 3
-  selectUnit(3);
+function saveStats() {
+    localStorage.setItem('bfp1_stats', JSON.stringify(userStats));
+    updateGamificationUI();
 }
 
-function deselectUnits(){document.querySelectorAll('.unit-card').forEach(c=>c.classList.remove('selected'));}
-function selectCustom(){document.querySelectorAll('.unit-card')[UNITS.length-1].classList.add('selected');}
-
-function selectUnit(idx){
-  deselectUnits();
-  document.querySelectorAll('.unit-card')[idx].classList.add('selected');
-  const u=UNITS[idx];
-  if(u.from){
-    activeFrom=u.from; activeTo=u.to;
-    document.getElementById('range-from').value=activeFrom;
-    document.getElementById('range-to').value=activeTo;
-  }
-  buildBubbles(); updateCount();
+function updateGamificationUI() {
+    document.getElementById('ui-xp').textContent = `${userStats.xp} XP`;
+    document.getElementById('ui-level').textContent = `Lvl ${userStats.level}`;
+    document.getElementById('ui-streak').textContent = userStats.streak;
+    document.getElementById('weak-btn').querySelector('.mode-desc').textContent = `${userStats.weakWords.length} words to review`;
 }
 
-function buildBubbles(){
-  const container=document.getElementById('page-bubbles');
-  container.innerHTML='';
-  const allPages=Object.keys(VOCAB_BY_PAGE).map(Number).sort((a,b)=>a-b);
-  allPages.forEach(p=>{
-    const bub=document.createElement('div');
-    const inRange=p>=activeFrom&&p<=activeTo;
-    const isEdge=p===activeFrom||p===activeTo;
-    bub.className='pb'+(isEdge?' range-start':inRange?' in-range':'');
-    bub.textContent=p;
-    bub.title='Page '+p+': '+(VOCAB_BY_PAGE[p]||[]).length+' words';
-    bub.onclick=()=>{
-      if(!bub._drag){
-        // Single click: set start of range
-        activeFrom=p;
-        if(p>activeTo)activeTo=p;
-        document.getElementById('range-from').value=activeFrom;
-        document.getElementById('range-to').value=activeTo;
-        deselectUnits(); selectCustom(); buildBubbles(); updateCount();
-      }
-    };
-    // Right-click / long-press: set end
-    bub.oncontextmenu=(e)=>{
-      e.preventDefault();
-      activeTo=p;
-      if(p<activeFrom)activeFrom=p;
-      document.getElementById('range-from').value=activeFrom;
-      document.getElementById('range-to').value=activeTo;
-      deselectUnits(); selectCustom(); buildBubbles(); updateCount();
-    };
-    container.appendChild(bub);
-  });
-}
-
-function updateCount(){
-  const n=countWords(activeFrom,activeTo);
-  document.getElementById('range-count').textContent=n+' words';
-  document.getElementById('start-btn').disabled=n<4;
-}
-
-function goToModes(){
-  const words=getWords(activeFrom,activeTo);
-  if(words.length<4){alert('Not enough words in this range (need at least 4).');return;}
-  activeDeck=shuffle(words);
-  document.getElementById('mode-sub').textContent=activeDeck.length+' words · pages '+activeFrom+'–'+activeTo;
-  show('mode-screen');
-}
-
-// ── Modes ────────────────────────────────────────────────────────
-function startMode(m){
-  lastMode=m; current=0; score=0; wrong=[];
-  const sel=document.getElementById('dir-select').value;
-  dir=sel==='random'?(Math.random()<.5?'en-de':'de-en'):sel;
-  activeDeck=shuffle(activeDeck);
-  if(m==='mcq')renderMCQ();
-  else if(m==='flashcard')renderFC();
-  else if(m==='match')renderMatch();
-  else if(m==='type')renderType();
-}
-function retryMode(){startMode(lastMode);}
-
-// MCQ
-function renderMCQ(){
-  show('mcq-screen');
-  document.getElementById('mcq-dir').textContent=dirLabel();
-  document.getElementById('mcq-word').textContent=q(current);
-  document.getElementById('mcq-label').textContent='Q '+(current+1)+' / '+activeDeck.length;
-  document.getElementById('mcq-score').textContent='Score: '+score;
-  setProgress('mcq-progress',current,activeDeck.length);
-  const correct=a(current);
-  const distractors=shuffle(activeDeck.filter((_,i)=>i!==current).map(w=>dir==='en-de'?w[1]:w[0]).filter(v=>v!==correct)).slice(0,3);
-  const opts=shuffle([correct,...distractors]);
-  const grid=document.getElementById('mcq-options');
-  grid.innerHTML='';
-  opts.forEach(opt=>{
-    const b=document.createElement('button');
-    b.className='opt';b.textContent=opt;
-    b.onclick=()=>mcqPick(b,opt===correct,correct);
-    grid.appendChild(b);
-  });
-}
-function mcqPick(btn,isCorrect,correct){
-  document.querySelectorAll('.opt').forEach(b=>b.setAttribute('disabled','true'));
-  if(isCorrect){btn.classList.add('correct');score++;}
-  else{btn.classList.add('wrong');wrong.push({q:q(current),a:correct});document.querySelectorAll('.opt').forEach(b=>{if(b.textContent===correct)b.classList.add('reveal');});}
-  setTimeout(()=>{current++;current>=activeDeck.length?showResult(score,activeDeck.length):renderMCQ();},900);
-}
-
-// Flashcard
-function renderFC(){
-  show('flashcard-screen');
-  document.getElementById('fc-translation').style.display='none';
-  document.getElementById('fc-reveal-btn').style.display='block';
-  document.getElementById('fc-rate-btns').style.display='none';
-  document.getElementById('fc-dir').textContent=dirLabel();
-  document.getElementById('fc-word').textContent=q(current);
-  document.getElementById('fc-label').textContent='Card '+(current+1)+' of '+activeDeck.length;
-  document.getElementById('fc-score').textContent='Got it: '+score;
-  setProgress('fc-progress',current,activeDeck.length);
-}
-function fcReveal(){
-  document.getElementById('fc-translation').textContent=a(current);
-  document.getElementById('fc-translation').style.display='block';
-  document.getElementById('fc-reveal-btn').style.display='none';
-  document.getElementById('fc-rate-btns').style.display='flex';
-}
-function fcRate(knew){
-  if(knew)score++;else wrong.push({q:q(current),a:a(current)});
-  current++;current>=activeDeck.length?showResult(score,activeDeck.length):renderFC();
-}
-
-// Match
-function renderMatch(){
-  show('match-screen');
-  matchSelected=null;matchPairs=[];matchDone=0;
-  const pool=shuffle(activeDeck).slice(0,6);
-  matchPairs=pool.map(w=>({en:w[0],de:w[1],id:w[0]}));
-  const left=shuffle(matchPairs),right=shuffle(matchPairs);
-  document.getElementById('match-score').textContent='0 / '+matchPairs.length+' matched';
-  setProgress('match-progress',0,matchPairs.length);
-  const lCol=document.getElementById('match-left');
-  const rCol=document.getElementById('match-right');
-  lCol.innerHTML='';rCol.innerHTML='';
-  left.forEach(p=>{
-    const d=document.createElement('div');d.className='match-item';
-    d.textContent=dir==='en-de'?p.en:p.de;
-    d.dataset.id=p.id;d.dataset.side='left';
-    d.onclick=()=>matchClick(d);lCol.appendChild(d);
-  });
-  right.forEach(p=>{
-    const d=document.createElement('div');d.className='match-item';
-    d.textContent=dir==='en-de'?p.de:p.en;
-    d.dataset.id=p.id;d.dataset.side='right';
-    d.onclick=()=>matchClick(d);rCol.appendChild(d);
-  });
-}
-function matchClick(el){
-  if(el.classList.contains('matched'))return;
-  if(!matchSelected){matchSelected=el;el.classList.add('selected');}
-  else{
-    if(matchSelected===el){el.classList.remove('selected');matchSelected=null;return;}
-    if(matchSelected.dataset.side===el.dataset.side){matchSelected.classList.remove('selected');matchSelected=el;el.classList.add('selected');return;}
-    const old=matchSelected;matchSelected=null;old.classList.remove('selected');
-    if(old.dataset.id===el.dataset.id){
-      [old,el].forEach(d=>{d.classList.remove('selected');d.classList.add('matched');});
-      matchDone++;
-      document.getElementById('match-score').textContent=matchDone+' / '+matchPairs.length+' matched';
-      setProgress('match-progress',matchDone,matchPairs.length);
-      if(matchDone>=matchPairs.length)setTimeout(()=>showResult(matchPairs.length,matchPairs.length),400);
-    } else {
-      wrong.push({q:old.textContent,a:matchPairs.find(p=>p.id===old.dataset.id)?.[dir==='en-de'?'de':'en']||''});
-      [old,el].forEach(d=>d.classList.add('wrong-flash'));
-      setTimeout(()=>[old,el].forEach(d=>d.classList.remove('wrong-flash')),600);
+function addXP(amount) {
+    userStats.xp += amount;
+    const newLevel = Math.floor(userStats.xp / 100) + 1; // 100 XP per level
+    if(newLevel > userStats.level) {
+        userStats.level = newLevel;
+        alert(`🎉 Level Up! You are now Level ${newLevel}!`);
     }
-  }
+    checkBadges();
+    saveStats();
 }
 
-// Type
-function renderType(){
-  show('type-screen');
-  document.getElementById('type-dir').textContent=dirLabel();
-  document.getElementById('type-word').textContent=q(current);
-  document.getElementById('type-label').textContent='Q '+(current+1)+' / '+activeDeck.length;
-  document.getElementById('type-score').textContent='Score: '+score;
-  document.getElementById('type-feedback').textContent='';
-  document.getElementById('type-feedback').style.color='';
-  document.getElementById('type-input').value='';
-  setProgress('type-progress',current,activeDeck.length);
-  setTimeout(()=>document.getElementById('type-input').focus(),50);
-  document.getElementById('type-input').onkeydown=e=>{if(e.key==='Enter')typeCheck();};
-}
-function typeCheck(){
-  const val=document.getElementById('type-input').value;
-  if(!val.trim())return;
-  const ans=a(current);
-  const parts=ans.split(/[,\/]/).map(s=>s.trim());
-  const ok=parts.some(p=>norm(val)===norm(p))||norm(val)===norm(ans);
-  const fb=document.getElementById('type-feedback');
-  if(ok){fb.textContent='Correct!';fb.style.color='#1a6b3a';score++;setTimeout(()=>{current++;current>=activeDeck.length?showResult(score,activeDeck.length):renderType();},650);}
-  else{fb.textContent='Answer: '+ans;fb.style.color='#a32d2d';wrong.push({q:q(current),a:ans});setTimeout(()=>{current++;current>=activeDeck.length?showResult(score,activeDeck.length):renderType();},1400);}
-}
-function typeSkip(){wrong.push({q:q(current),a:a(current)});current++;current>=activeDeck.length?showResult(score,activeDeck.length):renderType();}
-
-// Results
-function showResult(s,t){
-  show('result-screen');
-  const pct=Math.round((s/t)*100);
-  document.getElementById('result-pct').textContent=pct+'%';
-  const title=pct===100?'Perfect!':pct>=80?'Great work!':pct>=60?'Good effort!':'Keep practising!';
-  document.getElementById('result-title').textContent=title;
-  document.getElementById('result-sub').textContent=s+' / '+t+' correct · '+dirLabel();
-  const wd=document.getElementById('result-wrong');
-  if(wrong.length){
-    const uniq=[...new Map(wrong.map(w=>[w.q,w])).values()];
-    wd.innerHTML='<div style="font-size:13px;font-weight:500;color:#6b6860;margin-bottom:8px">Review these:</div>'+
-      uniq.map(w=>'<div class="summary-row"><span style="flex:1">'+w.q+'</span><span style="flex:1;text-align:right;color:#6b6860">'+w.a+'</span></div>').join('');
-  }else{wd.innerHTML='';}
-}
-
-// ── Test Creator ──────────────────────────────────────────────────
-function showTestCreator() {
-  show('test-creator-screen');
-  document.getElementById('test-output').style.display = 'none';
-  document.getElementById('print-test-btn').style.display = 'none';
-  
-  // Suggest a default number of questions (max 20, or the size of the deck)
-  const maxQ = Math.min(activeDeck.length, 20);
-  document.getElementById('test-q-count').value = maxQ;
-  document.getElementById('test-q-count').max = activeDeck.length;
-}
-
-function generateTest(showAnswers) {
-  let numQs = parseInt(document.getElementById('test-q-count').value) || 20;
-  if (numQs > activeDeck.length) numQs = activeDeck.length;
-  
-  // Randomly select the desired number of words
-  const shuffled = shuffle(activeDeck).slice(0, numQs);
-  
-  // Determine direction based on the current selection in Mode Screen
-  const sel = document.getElementById('dir-select').value;
-  const testDir = sel === 'random' ? (Math.random() < 0.5 ? 'en-de' : 'de-en') : sel;
-  
-  let html = `<h2 style="text-align:center; margin-bottom: 20px; color:#1a1a18;">Vocabulary Test</h2>`;
-  html += `<ol style="margin-left: 20px; line-height: 2.5; color:#1a1a18;">`;
-  
-  shuffled.forEach(w => {
-    const question = testDir === 'en-de' ? w[0] : w[1];
-    const answer = testDir === 'en-de' ? w[1] : w[0];
+function updateStreak() {
+    const today = new Date().toDateString();
+    if (userStats.lastDate === today) return; // Already played today
     
-    if (showAnswers) {
-      html += `<li><strong>${question}</strong> &mdash; <span style="color:#1a6b3a">${answer}</span></li>`;
-    } else {
-      // Provide a blank line for the student to write the answer
-      html += `<li><strong>${question}</strong> &mdash; _______________________________________</li>`;
-    }
-  });
-  
-  html += `</ol>`;
-  
-  const out = document.getElementById('test-output');
-  out.innerHTML = html;
-  out.style.display = 'block';
-  document.getElementById('print-test-btn').style.display = 'block';
-}
-
-function printTest() {
-  const content = document.getElementById('test-output').innerHTML;
-  const printWindow = window.open('', '', 'height=800,width=800');
-  
-  // Build a clean, print-friendly window
-  printWindow.document.write('<html><head><title>Vocabulary Test</title>');
-  printWindow.document.write('<style>');
-  printWindow.document.write('body { font-family: system-ui, sans-serif; padding: 40px; color: #000; }');
-  printWindow.document.write('li { margin-bottom: 15px; font-size: 16px; }');
-  printWindow.document.write('@media print { @page { margin: 2cm; } }');
-  printWindow.document.write('</style></head><body>');
-  
-  // Inject the generated test and print
-  printWindow.document.write(content);
-  printWindow.document.write('</body></html>');
-  printWindow.document.close();
-  printWindow.focus();
-  
-  // Slight timeout ensures styles load before the print dialog opens
-  setTimeout(() => { 
-    printWindow.print(); 
-    printWindow.close(); 
-  }, 250);
-}
-
-// Initialize the app
-buildSelection();
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
-}
-</script>
-</body>
-</html>
+    if (userStats.lastDate) {
+        const
