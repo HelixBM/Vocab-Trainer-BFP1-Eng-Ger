@@ -364,4 +364,148 @@ function updateStreak() {
     if (userStats.lastDate === today) return; // Already played today
     
     if (userStats.lastDate) {
-        const
+        const last = new Date(userStats.lastDate);
+        const diffTime = Math.abs(new Date() - last);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        if (diffDays === 1) userStats.streak += 1;
+        else userStats.streak = 1; // Reset
+    } else {
+        userStats.streak = 1;
+    }
+    userStats.lastDate = today;
+    saveStats();
+}
+
+function checkBadges() {
+    let unlockedAny = false;
+    BADGES.forEach(b => {
+        if (!userStats.badges.includes(b.id) && b.req(userStats)) {
+            userStats.badges.push(b.id);
+            alert(`🏆 Badge Unlocked: ${b.title}!`);
+            unlockedAny = true;
+        }
+    });
+    if(unlockedAny) saveStats();
+}
+
+function unlockBadgeManual(id) {
+    if (!userStats.badges.includes(id)) {
+        userStats.badges.push(id);
+        alert(`🏆 Badge Unlocked: ${BADGES.find(b=>b.id===id).title}!`);
+        saveStats();
+    }
+}
+
+function renderBadges() {
+    const cont = document.getElementById('badge-container');
+    cont.innerHTML = '';
+    BADGES.forEach(b => {
+        const isUnlocked = userStats.badges.includes(b.id);
+        cont.innerHTML += `
+            <div class="badge-item ${isUnlocked ? 'unlocked' : ''}">
+                <div class="badge-emoji">${b.icon}</div>
+                <div class="badge-title">${b.title}</div>
+                <div class="badge-desc">${b.desc}</div>
+            </div>`;
+    });
+}
+
+// Manage Weak Words
+function recordMistake(en, de) {
+    if(!userStats.weakWords.some(w => w[0] === en)) {
+        userStats.weakWords.push([en, de]);
+        saveStats();
+    }
+}
+function removeWeakWord(en) {
+    const initialLen = userStats.weakWords.length;
+    userStats.weakWords = userStats.weakWords.filter(w => w[0] !== en);
+    if(userStats.weakWords.length < initialLen) saveStats();
+}
+
+// ── APP STATE ────────────────────────────────────────────────────────
+let activeFrom=35, activeTo=46, activeDeck=[], dir='en-de', lastMode='mcq';
+let current=0, score=0, wrong=[];
+let matchSelected=null, matchPairs=[], matchDone=0;
+let taTimer = null, taTimeLeft = 60;
+
+function show(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(id === 'badges-screen') renderBadges();
+}
+function shuffle(a){let b=[...a];for(let i=b.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b;}
+function setProgress(id,n,t){document.getElementById(id).style.width=Math.round((n/t)*100)+'%';}
+function dirLabel(){return dir==='en-de'?'English → German':'Deutsch → Englisch';}
+function q(i){return dir==='en-de'?activeDeck[i][0]:activeDeck[i][1];}
+function a(i){return dir==='en-de'?activeDeck[i][1]:activeDeck[i][0];}
+function norm(s){return s.toLowerCase().replace(/[^a-z0-9äöüß\s]/g,'').trim();}
+
+function getWords(from,to){
+  let w=[];
+  for(let p=from;p<=to;p++){if(VOCAB_BY_PAGE[p])w=w.concat(VOCAB_BY_PAGE[p]);}
+  return w;
+}
+function countWords(from,to){
+  let n=0;
+  for(let p=from;p<=to;p++){if(VOCAB_BY_PAGE[p])n+=VOCAB_BY_PAGE[p].length;}
+  return n;
+}
+
+// ── Selection screen ──
+function buildSelection(){
+  const list=document.getElementById('unit-list');
+  list.innerHTML='';
+  UNITS.forEach((u,idx)=>{
+    const n=u.from?countWords(u.from,u.to):'—';
+    const card=document.createElement('div');
+    card.className='unit-card';
+    card.innerHTML=`<div><div class="unit-name">${u.name}</div><div class="unit-meta">${u.desc}${u.from?' &nbsp;·&nbsp; pp.'+u.from+'–'+u.to:''}</div></div><span class="unit-count">${n} words</span>`;
+    card.onclick=()=>selectUnit(idx);
+    list.appendChild(card);
+  });
+  buildBubbles();
+  updateCount();
+  updateGamificationUI();
+
+  const fi=document.getElementById('range-from');
+  const ti=document.getElementById('range-to');
+  fi.oninput=()=>{
+    activeFrom=Math.max(6,Math.min(184,parseInt(fi.value)||6));
+    if(activeFrom>activeTo){activeTo=activeFrom;ti.value=activeTo;}
+    fi.value=activeFrom;
+    deselectUnits(); selectCustom(); buildBubbles(); updateCount();
+  };
+  ti.oninput=()=>{
+    activeTo=Math.max(6,Math.min(184,parseInt(ti.value)||6));
+    if(activeTo<activeFrom){activeFrom=activeTo;fi.value=activeFrom;}
+    ti.value=activeTo;
+    deselectUnits(); selectCustom(); buildBubbles(); updateCount();
+  };
+  selectUnit(3);
+}
+
+function deselectUnits(){document.querySelectorAll('.unit-card').forEach(c=>c.classList.remove('selected'));}
+function selectCustom(){document.querySelectorAll('.unit-card')[UNITS.length-1].classList.add('selected');}
+
+function selectUnit(idx){
+  deselectUnits();
+  document.querySelectorAll('.unit-card')[idx].classList.add('selected');
+  const u=UNITS[idx];
+  if(u.from){
+    activeFrom=u.from; activeTo=u.to;
+    document.getElementById('range-from').value=activeFrom;
+    document.getElementById('range-to').value=activeTo;
+  }
+  buildBubbles(); updateCount();
+}
+
+function buildBubbles(){
+  const container=document.getElementById('page-bubbles');
+  container.innerHTML='';
+  const allPages=Object.keys(VOCAB_BY_PAGE).map(Number).sort((a,b)=>a-b);
+  allPages.forEach(p=>{
+    const bub=document.createElement('div');
+    const inRange=p>=activeFrom&&p<=activeTo;
+    const isEdge=p===activeFrom||p===activeTo;
+    bub.className='pb'+(is
