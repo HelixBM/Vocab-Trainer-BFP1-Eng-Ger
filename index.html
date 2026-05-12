@@ -941,7 +941,6 @@ function printTest(){
   const content = document.getElementById('test-output').innerHTML;
   const win = window.open('', '', 'height=800,width=800');
   
-  // Updated HTML string with advanced print CSS
   const printStyles = `
     <style>
       body {
@@ -952,21 +951,32 @@ function printTest(){
       li {
         margin-bottom: 15px;
         font-size: 16px;
-        /* Prevent questions from splitting across pages */
         page-break-inside: avoid; 
         break-inside: avoid;
       }
       @media print {
         @page {
-          /* Smaller margins to fit more on a single page */
           margin: 1cm; 
         }
         body {
           padding: 0;
         }
-        /* Optional: slightly scale down to ensure it fits on one page */
         ol {
-          zoom: 0.95; 
+          /* Override the inline line-height: 2.5 from generateTest */
+          line-height: 1.5 !important; 
+          margin-top: 0;
+          
+          /* Pro-tip: Split the vocab test into 2 columns so it easily fits */
+          column-count: 2;
+          column-gap: 40px;
+        }
+        li {
+          /* Shrink the margin between questions on paper */
+          margin-bottom: 10px; 
+        }
+        h2 {
+          /* Give the title a little breathing room from the columns */
+          margin-bottom: 30px !important; 
         }
       }
     </style>
