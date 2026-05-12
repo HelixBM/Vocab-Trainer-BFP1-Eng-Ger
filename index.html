@@ -940,13 +940,49 @@ function generateTest(showAnswers){
 function printTest(){
   const content = document.getElementById('test-output').innerHTML;
   const win = window.open('', '', 'height=800,width=800');
-  win.document.write('<html><head><title>Vocabulary Test</title><style>body{font-family:system-ui,sans-serif;padding:40px;color:#000}li{margin-bottom:15px;font-size:16px}@media print{@page{margin:2cm}}</style></head><body>');
+  
+  // Updated HTML string with advanced print CSS
+  const printStyles = `
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        padding: 20px; 
+        color: #000;
+      }
+      li {
+        margin-bottom: 15px;
+        font-size: 16px;
+        /* Prevent questions from splitting across pages */
+        page-break-inside: avoid; 
+        break-inside: avoid;
+      }
+      @media print {
+        @page {
+          /* Smaller margins to fit more on a single page */
+          margin: 1cm; 
+        }
+        body {
+          padding: 0;
+        }
+        /* Optional: slightly scale down to ensure it fits on one page */
+        ol {
+          zoom: 0.95; 
+        }
+      }
+    </style>
+  `;
+
+  win.document.write(`<html><head><title>Vocabulary Test</title>${printStyles}</head><body>`);
   win.document.write(content);
   win.document.write('</body></html>');
-  win.document.close(); win.focus();
-  setTimeout(() => { win.print(); win.close(); }, 250);
+  win.document.close(); 
+  win.focus();
+  
+  setTimeout(() => { 
+    win.print(); 
+    win.close(); 
+  }, 250);
 }
-
 // ── Boot ──
 initApp();
 </script>
