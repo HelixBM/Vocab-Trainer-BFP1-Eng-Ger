@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vocab-bfp1-v2';
+const CACHE_NAME = 'vocab-bfp1-v3'; // Bumped to v3 to force the update
 const ASSETS = [
   './',
   './index.html',
@@ -23,8 +23,30 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+// UPDATED FETCH EVENT
 self.addEventListener('fetch', event => {
+  // Only handle GET requests (skip POSTs, etc.)
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    caches.match(event.request).then(cachedResponse => {
+      // 1. Always fetch the newest version from the network in the background
+      const fetchPromise = fetch(event.request).then(networkResponse => {
+        // Update the cache with the fresh response
+        if (networkResponse && networkResponse.status === 200) {
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, networkResponse.clone());
+          });
+        }
+        return networkResponse;
+      }).catch(err => {
+        // Network failed (user is offline), just silently fail the background fetch
+        console.log('Offline: using cached version for', event.request.url);
+      });
+
+      // 2. Return the cached response immediately if we have it. 
+      // If we don't have it in cache, wait for the network fetch to finish.
+      return cachedResponse || fetchPromise;
+    })
   );
 });
