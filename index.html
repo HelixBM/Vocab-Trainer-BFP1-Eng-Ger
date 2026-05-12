@@ -897,87 +897,115 @@ function showTestCreator(){
   currentTestState = null; 
 }
 
-function generateTest(showAnswers){
-  // 2. Only generate new questions if we aren't asking for the answer key 
-  // OR if a test hasn't been generated yet.
+function generateTest(showAnswers) {
   if (!showAnswers || !currentTestState) {
     let numQs = parseInt(document.getElementById('test-q-count').value) || 20;
     if(numQs > activeDeck.length) numQs = activeDeck.length;
-    
+
     const shuffled = shuffle(activeDeck).slice(0, numQs);
     const sel = document.getElementById('dir-select').value;
-    const testDir = sel === 'random' ? (Math.random() < 0.5 ? 'en-de' : 'de-en') : sel;
     
-    // Save the newly generated questions and direction
     currentTestState = {
       questions: shuffled,
-      direction: testDir
+      direction: sel // Store the exact selection ('en-de', 'de-en', or 'random')
     };
   }
 
-  // 3. Use the saved questions and direction to build the HTML
   const { questions, direction } = currentTestState;
+  const totalQs = questions.length;
 
-  let html = `<h2 style="text-align:center;margin-bottom:20px;color:var(--fg)">Vocabulary Test</h2><ol style="margin-left:20px;line-height:2.5;color:var(--fg)">`;
-  
-  questions.forEach(w => {
-    const question = direction === 'en-de' ? w[0] : w[1];
-    const answer   = direction === 'en-de' ? w[1] : w[0];
+  // 1. Build the Header 
+  let html = `
+    <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 20px;">
+      <span>English/BFP1</span>
+      <span>name: ___________________________</span>
+    </div>
+    <h2 style="text-align:center; margin-bottom: 30px;">Vocabulary Test</h2>
+  `;
+
+  // Helper function to build a section (Word on left, Blank line on right)
+  const buildSection = (title, qList, dir) => {
+    let sec = `<h3 style="margin-bottom: 15px; font-size: 18px;">${title} (${qList.length})</h3>`;
+    sec += `<ul style="list-style: none; padding: 0; margin-bottom: 30px;">`;
     
-    html += showAnswers
-      ? `<li><strong>${question}</strong> — <span style="color:var(--green)">${answer}</span></li>`
-      : `<li><strong>${question}</strong> — _______________________________________</li>`;
-  });
-  
-  html += '</ol>';
-  
+    qList.forEach(w => {
+      const q = dir === 'en-de' ? w[0] : w[1];
+      const a = dir === 'en-de' ? w[1] : w[0];
+      
+      sec += showAnswers
+        ? `<li class="vocab-row"><span>&bull; ${q}</span> <span style="color:var(--green); font-weight:bold;">${a}</span></li>`
+        : `<li class="vocab-row"><span>&bull; ${q}</span> <span>_________________________________</span></li>`;
+    });
+    
+    sec += `</ul>`;
+    return sec;
+  };
+
+  // 2. Build the Sections
+  if (direction === 'random') {
+    // Split the test in half to mimic the PDF's two distinct sections
+    const half = Math.ceil(totalQs / 2);
+    html += buildSection('1. Translate these words into German.', questions.slice(0, half), 'en-de');
+    html += buildSection('2. Translate these words into English.', questions.slice(half), 'de-en');
+  } else {
+    // If they only picked one direction, just show one section
+    const title = direction === 'en-de' ? '1. Translate these words into German.' : '1. Translate these words into English.';
+    html += buildSection(title, questions, direction);
+  }
+
+  // 3. Build the Footer
+  html += `
+    <div style="display: flex; justify-content: flex-end; gap: 40px; font-weight: bold; font-size: 18px; margin-top: 40px;">
+      <span>Total: ______ / ${totalQs}</span>
+      <span>Grade: _________</span>
+    </div>
+  `;
+
   const out = document.getElementById('test-output');
-  out.innerHTML = html; 
+  out.innerHTML = html;
   out.style.display = 'block';
   document.getElementById('print-test-btn').style.display = 'block';
 }
 
-function printTest(){
+function printTest() {
   const content = document.getElementById('test-output').innerHTML;
   const win = window.open('', '', 'height=800,width=800');
-  
+
   const printStyles = `
     <style>
+      * { 
+        box-sizing: border-box; 
+      }
       body {
         font-family: system-ui, sans-serif;
-        padding: 20px; 
+        padding: 20px;
         color: #000;
+        margin: 0;
       }
-      li {
-        margin-bottom: 15px;
+      /* Ensure the words and lines are pushed to opposite sides */
+      .vocab-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
         font-size: 16px;
-        page-break-inside: avoid; 
-        break-inside: avoid;
       }
+      
       @media print {
-        @page {
-          margin: 1cm; 
+        @page { 
+          /* Slightly wider margins so the lines don't hit the edge */
+          margin: 1cm 1.5cm; 
         }
-        body {
-          padding: 0;
+        body { 
+          padding: 0; 
         }
-        ol {
-          /* Override the inline line-height: 2.5 from generateTest */
-          line-height: 1.5 !important; 
-          margin-top: 0;
-          
-          /* Pro-tip: Split the vocab test into 2 columns so it easily fits */
-          column-count: 2;
-          column-gap: 40px;
+        .vocab-row { 
+          /* Give a little more breathing room on paper */
+          margin-bottom: 18px; 
+          break-inside: avoid; 
         }
-        li {
-          /* Shrink the margin between questions on paper */
-          margin-bottom: 10px; 
-        }
-        h2 {
-          /* Give the title a little breathing room from the columns */
-          margin-bottom: 30px !important; 
-        }
+        /* Force exact colors for printing */
+        * { color: #000 !important; }
+        span[style*="--green"] { color: #2e7d32 !important; }
       }
     </style>
   `;
@@ -985,7 +1013,7 @@ function printTest(){
   win.document.write(`<html><head><title>Vocabulary Test</title>${printStyles}</head><body>`);
   win.document.write(content);
   win.document.write('</body></html>');
-  win.document.close(); 
+  win.document.close();
   win.focus();
   
   setTimeout(() => { 
